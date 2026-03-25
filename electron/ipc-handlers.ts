@@ -37,6 +37,17 @@ function formatBytes(bytes: number, decimals = 2) {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 }
 
+// Normalize path for Windows and Unix
+function normalizePath(p: string): string {
+  if (!p) return p;
+  let normalized = path.normalize(p);
+  // Remove leading slash on Windows if present (e.g. /C:/...)
+  if (process.platform === 'win32' && normalized.startsWith('\\') && normalized.length > 2 && normalized[2] === ':') {
+    normalized = normalized.substring(1);
+  }
+  return normalized;
+}
+
 export function registerIpcHandlers() {
   // Select directory using native dialog
   ipcMain.handle('select-directory', async () => {
@@ -143,6 +154,7 @@ export function registerIpcHandlers() {
       throw new Error('projectPath is required');
     }
 
+    const normalizedPath = normalizePath(projectPath);
     let scripts: Record<string, string> = {};
     let gitStatus = null;
     let localBranches: string[] = [];
@@ -151,10 +163,15 @@ export function registerIpcHandlers() {
 
     // Read README.md
     try {
-      const readmeFiles = ['README.md', 'readme.md', 'README.MD', 'Readme.md'];
+      const readmeFiles = [
+        'README.md', 'readme.md', 'README.MD', 'Readme.md',
+        'README.markdown', 'readme.markdown',
+        'README.txt', 'readme.txt',
+        'README', 'readme'
+      ];
       for (const file of readmeFiles) {
         try {
-          const readmePath = path.join(projectPath, file);
+          const readmePath = path.join(normalizedPath, file);
           readmeContent = await fs.readFile(readmePath, 'utf-8');
           break;
         } catch (e) {
@@ -162,32 +179,38 @@ export function registerIpcHandlers() {
         }
       }
     } catch (e) {
-      // Ignore
+      console.error(`Error reading README for ${normalizedPath}:`, e);
     }
 
     // Read package.json for scripts
     try {
-      const pkgJsonPath = path.join(projectPath, 'package.json');
+      const pkgJsonPath = path.join(normalizedPath, 'package.json');
       const pkgData = await fs.readFile(pkgJsonPath, 'utf-8');
       const pkg = JSON.parse(pkgData);
       scripts = pkg.scripts || {};
     } catch (e) {
-      // Ignore if no package.json
+      // Only log if it's not a "file not found" error, as some projects might not have package.json
+      if ((e as any).code !== 'ENOENT') {
+        console.error(`Error reading package.json for ${normalizedPath}:`, e);
+      }
     }
 
     // Git details
     try {
-      const git = simpleGit(projectPath);
+      const git = simpleGit(normalizedPath);
       const isRepo = await git.checkIsRepo();
       if (isRepo) {
-        gitStatus = await git.status();
+        const rawStatus = await git.status();
+        // Ensure it's a plain object for Electron's IPC cloning
+        gitStatus = JSON.parse(JSON.stringify(rawStatus));
+        
         const branchSummary = await git.branch();
         const allBranches = branchSummary.all;
         localBranches = allBranches.filter(b => !b.startsWith('remotes/'));
         remoteBranches = allBranches.filter(b => b.startsWith('remotes/'));
       }
     } catch (e) {
-      // Ignore git errors
+      console.error(`Error reading Git status for ${normalizedPath}:`, e);
     }
 
     return { scripts, gitStatus, localBranches, remoteBranches, readmeContent };
@@ -199,8 +222,9 @@ export function registerIpcHandlers() {
       throw new Error('projectPath and command are required');
     }
 
+    const normalizedPath = normalizePath(projectPath);
     return new Promise((resolve) => {
-      exec(command, { cwd: projectPath }, (error, stdout, stderr) => {
+      exec(command, { cwd: normalizedPath }, (error, stdout, stderr) => {
         resolve({
           stdout,
           stderr,
@@ -216,11 +240,12 @@ export function registerIpcHandlers() {
       throw new Error('projectPath is required');
     }
 
-    const nodeModulesPath = path.join(projectPath, 'node_modules');
+    const normalizedPath = normalizePath(projectPath);
+    const nodeModulesPath = path.join(normalizedPath, 'node_modules');
     await fs.rm(nodeModulesPath, { recursive: true, force: true });
 
     // Recalculate size after nuking
-    const sizeBytes = await getFolderSize(projectPath);
+    const sizeBytes = await getFolderSize(normalizedPath);
     const size = formatBytes(sizeBytes);
 
     return {
@@ -237,7 +262,8 @@ export function registerIpcHandlers() {
       throw new Error('projectPath is required');
     }
 
-    const sizeBytes = await getFolderSize(projectPath);
+    const normalizedPath = normalizePath(projectPath);
+    const sizeBytes = await getFolderSize(normalizedPath);
     const size = formatBytes(sizeBytes);
     return { size, sizeBytes };
   });
@@ -248,7 +274,8 @@ export function registerIpcHandlers() {
       throw new Error('projectPath is required');
     }
 
-    const git = simpleGit(projectPath);
+    const normalizedPath = normalizePath(projectPath);
+    const git = simpleGit(normalizedPath);
     const isRepo = await git.checkIsRepo();
     if (!isRepo) {
       throw new Error('Not a git repository');

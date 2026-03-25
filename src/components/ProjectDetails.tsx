@@ -236,6 +236,18 @@ export function ProjectDetails({ project, onClose, onProjectUpdate }: ProjectDet
           <div className="flex items-center justify-center h-full">
             <RefreshCw className="w-6 h-6 text-blue-500 animate-spin" />
           </div>
+        ) : !details ? (
+          <div className="flex flex-col items-center justify-center h-full text-gray-500 space-y-4">
+            <div className="p-4 bg-red-50 rounded-full border border-red-100">
+              <AlertCircle className="w-8 h-8 text-red-500" />
+            </div>
+            <div className="text-center px-4">
+              <h3 className="text-lg font-medium text-gray-900">Failed to load details</h3>
+              <p className="text-sm mt-1 max-w-xs text-gray-500">
+                An error occurred while fetching project information. Please check the terminal logs.
+              </p>
+            </div>
+          </div>
         ) : (
           <>
             {activeTab === 'scripts' && (
