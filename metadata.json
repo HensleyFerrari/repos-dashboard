@@ -1,0 +1,5 @@
+{
+  "name": "Project Dashboard",
+  "description": "A local project manager built with React and Express to scan, view, and manage local repositories.",
+  "requestFramePermissions": []
+}
