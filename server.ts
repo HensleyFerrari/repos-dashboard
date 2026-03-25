@@ -54,64 +54,69 @@ async function startServer() {
 
     try {
       const resolvedPath = path.resolve(rootPath);
-      const items = await fs.readdir(resolvedPath, { withFileTypes: true });
-      const projects = [];
+      const projects: any[] = [];
+      const ignoredFolders = ['node_modules', 'vendor', 'dist', 'build', 'venv', '.venv', 'env', '.env'];
 
-      for (const item of items) {
-        if (item.isDirectory() && !item.name.startsWith('.')) {
-          const projectPath = path.join(resolvedPath, item.name);
-          
-          // Detect stack
-          let stack = 'Unknown';
-          let hasPackageJson = false;
-          let hasComposerJson = false;
-          let hasRequirementsTxt = false;
+      async function scanDirectory(dirPath: string) {
+        try {
+          const items = await fs.readdir(dirPath, { withFileTypes: true });
 
-          try {
-            const files = await fs.readdir(projectPath);
-            hasPackageJson = files.includes('package.json');
-            hasComposerJson = files.includes('composer.json');
-            hasRequirementsTxt = files.includes('requirements.txt') || files.includes('manage.py');
+          if (dirPath !== resolvedPath) {
+            let stack = 'Unknown';
+            const itemNames = items.map(i => i.name);
+            const hasPackageJson = itemNames.includes('package.json');
+            const hasComposerJson = itemNames.includes('composer.json');
+            const hasRequirementsTxt = itemNames.includes('requirements.txt') || itemNames.includes('manage.py');
 
             if (hasPackageJson) stack = 'Node.js';
             else if (hasComposerJson) stack = 'PHP';
             else if (hasRequirementsTxt) stack = 'Python';
-          } catch (e) {
-            continue; // Skip if we can't read the directory
-          }
 
-          if (stack !== 'Unknown') {
-            // Get Git branch if available
-            let branch = 'N/A';
-            let isDirty = false;
-            try {
-              const git = simpleGit(projectPath);
-              const isRepo = await git.checkIsRepo();
-              if (isRepo) {
-                const status = await git.status();
-                branch = status.current || 'N/A';
-                isDirty = !status.isClean();
+            if (stack !== 'Unknown') {
+              let branch = 'N/A';
+              let isDirty = false;
+              try {
+                const git = simpleGit(dirPath);
+                const isRepo = await git.checkIsRepo();
+                if (isRepo) {
+                  const status = await git.status();
+                  branch = status.current || 'N/A';
+                  isDirty = !status.isClean();
+                }
+              } catch (e) {
+                // Ignore git errors
               }
-            } catch (e) {
-              // Ignore git errors
+
+              const sizeBytes = await getFolderSize(dirPath);
+              projects.push({
+                id: dirPath,
+                name: path.basename(dirPath),
+                path: dirPath,
+                stack,
+                branch,
+                isDirty,
+                size: formatBytes(sizeBytes),
+                sizeBytes
+              });
             }
-
-            // Get size (excluding heavy folders for quick scan)
-            const sizeBytes = await getFolderSize(projectPath);
-
-            projects.push({
-              id: projectPath,
-              name: item.name,
-              path: projectPath,
-              stack,
-              branch,
-              isDirty,
-              size: formatBytes(sizeBytes),
-              sizeBytes
-            });
           }
+
+          const promises = [];
+          for (const item of items) {
+            if (item.isDirectory()) {
+              const name = item.name;
+              if (!name.startsWith('.') && !ignoredFolders.includes(name)) {
+                promises.push(scanDirectory(path.join(dirPath, name)));
+              }
+            }
+          }
+          await Promise.all(promises);
+        } catch (e) {
+          // Ignore unreadable directories
         }
       }
+
+      await scanDirectory(resolvedPath);
 
       res.json({ projects });
     } catch (error: any) {
