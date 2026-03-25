@@ -20,14 +20,51 @@ interface ProjectDetailsProps {
 
 export function ProjectDetails({ project, onClose, onProjectUpdate }: ProjectDetailsProps) {
   const [activeTab, setActiveTab] = useState<'scripts' | 'git' | 'logs'>('scripts');
-  const [details, setDetails] = useState<{ scripts: Record<string, string>, gitStatus: any, branches: string[] } | null>(null);
+  const [details, setDetails] = useState<{ 
+    scripts: Record<string, string>, 
+    gitStatus: any, 
+    localBranches: string[],
+    remoteBranches: string[]
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [logs, setLogs] = useState<string>('');
   const [isRunning, setIsRunning] = useState(false);
+  const [width, setWidth] = useState(384); // Default 384px (w-96)
+  const [isResizing, setIsResizing] = useState(false);
 
   useEffect(() => {
     fetchDetails();
   }, [project.path]);
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isResizing) return;
+      
+      const newWidth = window.innerWidth - e.clientX;
+      if (newWidth >= 300 && newWidth <= 800) {
+        setWidth(newWidth);
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+      document.body.style.cursor = 'default';
+    };
+
+    if (isResizing) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = 'default';
+      document.body.style.userSelect = 'auto';
+    };
+  }, [isResizing]);
 
   const fetchDetails = async () => {
     setLoading(true);
@@ -64,6 +101,11 @@ export function ProjectDetails({ project, onClose, onProjectUpdate }: ProjectDet
       } else {
         if (data.stdout) setLogs((prev) => prev + `${data.stdout}\n`);
         if (data.stderr) setLogs((prev) => prev + `${data.stderr}\n`);
+      }
+
+      // Refresh if it was a git command
+      if (command.startsWith('git ')) {
+        await fetchDetails();
       }
     } catch (e: any) {
       setLogs((prev) => prev + `Failed to execute: ${e.message}\n`);
@@ -129,17 +171,57 @@ export function ProjectDetails({ project, onClose, onProjectUpdate }: ProjectDet
     }
   };
 
+  const gitSync = async () => {
+    setActiveTab('logs');
+    setIsRunning(true);
+    setLogs((prev) => prev + `\n$ Syncing with remote and pruning...\n`);
+    
+    try {
+      const res = await fetch('/api/project/git-sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectPath: project.path })
+      });
+      const data = await res.json();
+      
+      if (data.error) {
+        setLogs((prev) => prev + `Error: ${data.error}\n`);
+      } else {
+        setLogs((prev) => prev + `${data.logs}\n`);
+        setLogs((prev) => prev + `Successfully deleted ${data.deletedCount} obsolete branches.\n`);
+        await fetchDetails(); // Refresh branches
+      }
+    } catch (e: any) {
+      setLogs((prev) => prev + `Failed to execute: ${e.message}\n`);
+    } finally {
+      setIsRunning(false);
+    }
+  };
+
   return (
-    <div className="fixed inset-y-0 right-0 w-96 bg-white shadow-2xl border-l border-gray-200 flex flex-col z-50 transform transition-transform duration-300">
+    <div 
+      className="fixed inset-y-0 right-0 bg-white shadow-2xl border-l border-gray-200 flex flex-col z-50 transform transition-transform duration-300"
+      style={{ width: `${width}px` }}
+    >
+      {/* Resize Handle */}
+      <div 
+        className={`absolute left-0 top-0 bottom-0 w-1 px-1 cursor-col-resize hover:bg-blue-400/50 transition-colors z-[60] flex items-center justify-center group ${isResizing ? 'bg-blue-500' : ''}`}
+        onMouseDown={(e) => {
+          e.preventDefault();
+          setIsResizing(true);
+        }}
+      >
+        <div className="w-0.5 h-8 bg-gray-300 group-hover:bg-blue-300 rounded-full transition-colors" />
+      </div>
       {/* Header */}
-      <div className="p-5 border-b border-gray-100 flex items-center justify-between bg-gray-50">
-        <div>
-          <h2 className="text-xl font-bold text-gray-900 truncate max-w-[250px]">{project.name}</h2>
-          <p className="text-sm text-gray-500 truncate max-w-[250px]">{project.path}</p>
+      <div className="p-5 border-b border-gray-100 flex items-center justify-between bg-gray-50 gap-4">
+        <div className="min-w-0 flex-1">
+          <h2 className="text-xl font-bold text-gray-900 truncate" title={project.name}>{project.name}</h2>
+          <p className="text-sm text-gray-500 truncate font-mono" title={project.path}>{project.path}</p>
         </div>
         <button 
           onClick={onClose}
-          className="p-2 hover:bg-gray-200 rounded-full transition-colors text-gray-500"
+          className="p-2 hover:bg-gray-200 rounded-full transition-colors text-gray-500 flex-shrink-0"
         >
           <X className="w-5 h-5" />
         </button>
@@ -262,38 +344,62 @@ export function ProjectDetails({ project, onClose, onProjectUpdate }: ProjectDet
 
                 <div>
                   <h3 className="text-sm font-semibold text-gray-900 mb-3 uppercase tracking-wider">Actions</h3>
-                  <div className="space-y-2">
+                  <div className="grid grid-cols-2 gap-2">
                     <button
                       onClick={() => runCommand('git pull')}
                       disabled={isRunning}
-                      className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors disabled:opacity-50"
+                      className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors disabled:opacity-50"
                     >
                       <GitPullRequest className="w-4 h-4" />
-                      <span className="font-medium">Git Pull</span>
+                      <span className="font-medium text-sm">Pull</span>
                     </button>
                     <button
-                      onClick={() => runCommand('git fetch')}
+                      onClick={gitSync}
                       disabled={isRunning}
-                      className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-gray-50 text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50"
+                      className="flex items-center justify-center gap-2 px-4 py-2 bg-purple-50 text-purple-600 border border-purple-200 rounded-lg hover:bg-purple-100 transition-colors disabled:opacity-50"
+                      title="Fetch --prune and delete local branches that no longer exist on remote"
                     >
                       <RefreshCw className="w-4 h-4" />
-                      <span className="font-medium">Git Fetch</span>
+                      <span className="font-medium text-sm">Sync & Prune</span>
                     </button>
                   </div>
                 </div>
 
-                <div>
-                  <h3 className="text-sm font-semibold text-gray-900 mb-3 uppercase tracking-wider">Branches</h3>
-                  <div className="bg-gray-50 border border-gray-100 rounded-lg overflow-hidden">
-                    <div className="max-h-48 overflow-y-auto p-2 space-y-1">
-                      {details?.branches?.map((b) => (
-                        <div key={b} className={`text-sm px-3 py-1.5 rounded ${b === project.branch ? 'bg-blue-100 text-blue-700 font-medium' : 'text-gray-600 hover:bg-gray-200'}`}>
-                          {b}
-                        </div>
-                      ))}
-                      {(!details?.branches || details.branches.length === 0) && (
-                        <div className="text-sm text-gray-500 p-2 italic">No branches found.</div>
-                      )}
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-xs font-bold text-gray-400 mb-2 uppercase tracking-widest flex items-center gap-2">
+                      <GitBranch className="w-3 h-3" /> Local Branches
+                    </h3>
+                    <div className="bg-gray-50 border border-gray-100 rounded-lg overflow-hidden">
+                      <div className="max-h-40 overflow-y-auto p-2 space-y-1">
+                        {details?.localBranches?.map((b) => (
+                          <div key={b} className={`text-sm px-3 py-1.5 rounded flex items-center justify-between ${b === project.branch ? 'bg-blue-100 text-blue-700 font-medium' : 'text-gray-600 hover:bg-gray-200'}`}>
+                            <span className="truncate">{b}</span>
+                            {b === project.branch && <span className="text-[10px] bg-blue-200 text-blue-800 px-1 rounded uppercase">current</span>}
+                          </div>
+                        ))}
+                        {(!details?.localBranches || details.localBranches.length === 0) && (
+                          <div className="text-sm text-gray-500 p-2 italic">No local branches found.</div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="text-xs font-bold text-gray-400 mb-2 uppercase tracking-widest flex items-center gap-2">
+                      <GitBranch className="w-3 h-3 text-gray-400" /> Remote Branches
+                    </h3>
+                    <div className="bg-gray-50 border border-gray-100 rounded-lg overflow-hidden">
+                      <div className="max-h-40 overflow-y-auto p-2 space-y-1">
+                        {details?.remoteBranches?.map((b) => (
+                          <div key={b} className="text-sm px-3 py-1.5 rounded text-gray-500 hover:bg-gray-200 truncate">
+                            {b}
+                          </div>
+                        ))}
+                        {(!details?.remoteBranches || details.remoteBranches.length === 0) && (
+                          <div className="text-sm text-gray-500 p-2 italic">No remote branches found.</div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>

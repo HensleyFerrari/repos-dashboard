@@ -131,7 +131,8 @@ async function startServer() {
     try {
       let scripts: Record<string, string> = {};
       let gitStatus = null;
-      let branches = [];
+      let localBranches: string[] = [];
+      let remoteBranches: string[] = [];
 
       // Read package.json for scripts
       try {
@@ -149,14 +150,75 @@ async function startServer() {
         const isRepo = await git.checkIsRepo();
         if (isRepo) {
           gitStatus = await git.status();
-          const branchSummary = await git.branch();
-          branches = branchSummary.all;
+          const localSummary = await git.branchLocal();
+          const allSummary = await git.branch();
+          
+          localBranches = localSummary.all;
+          remoteBranches = allSummary.all.filter(b => !localBranches.includes(b));
         }
       } catch (e) {
         // Ignore git errors
       }
 
-      res.json({ scripts, gitStatus, branches });
+      res.json({ scripts, gitStatus, localBranches, remoteBranches });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post('/api/project/git-sync', async (req, res) => {
+    const { projectPath } = req.body;
+    if (!projectPath) return res.status(400).json({ error: 'projectPath is required' });
+
+    try {
+      const git = simpleGit(projectPath);
+      const isRepo = await git.checkIsRepo();
+      if (!isRepo) return res.status(400).json({ error: 'Not a git repository' });
+
+      const logs: string[] = [];
+      
+      // 1. Fetch and prune
+      logs.push('Fetching and pruning remotes...');
+      await git.fetch(['--prune']);
+      logs.push('Fetch complete.');
+
+      // 2. Identify and delete gone branches
+      const branchSummary = await git.branch(['-vv']);
+      const currentBranch = branchSummary.current;
+
+      const rawStatus = await git.raw(['branch', '-vv']);
+      const goneBranches = rawStatus.split('\n')
+        .filter(line => line.includes(': gone]'))
+        .map(line => {
+          // Lines look like: 
+          //   feature/test 1234567 [origin/feature/test: gone] commit message
+          // * main         1234567 [origin/main] commit message
+          const match = line.match(/^[* ]\s+([^\s]+)\s+/);
+          return match ? match[1] : null;
+        })
+        .filter(name => name && name !== currentBranch) as string[];
+
+      const deletedBranches: string[] = [];
+      if (goneBranches.length > 0) {
+        logs.push(`Found ${goneBranches.length} obsolete branches: ${goneBranches.join(', ')}`);
+        for (const branch of goneBranches) {
+          try {
+            await git.deleteLocalBranch(branch, true); // Force delete since it's gone on remote
+            deletedBranches.push(branch);
+            logs.push(`Deleted branch: ${branch}`);
+          } catch (e: any) {
+            logs.push(`Failed to delete branch ${branch}: ${e.message}`);
+          }
+        }
+      } else {
+        logs.push('No obsolete local branches found.');
+      }
+
+      res.json({ 
+        success: true, 
+        logs: logs.join('\n'),
+        deletedCount: deletedBranches.length
+      });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
