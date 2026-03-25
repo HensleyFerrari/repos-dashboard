@@ -141,6 +141,23 @@ async function startServer() {
       let gitStatus = null;
       let localBranches: string[] = [];
       let remoteBranches: string[] = [];
+      let readmeContent: string | null = null;
+
+      // Read README.md
+      try {
+        const readmeFiles = ['README.md', 'readme.md', 'README.MD', 'Readme.md'];
+        for (const file of readmeFiles) {
+          try {
+            const readmePath = path.join(projectPath, file);
+            readmeContent = await fs.readFile(readmePath, 'utf-8');
+            break; // Found one
+          } catch (e) {
+            // Not found, try next
+          }
+        }
+      } catch (e) {
+        // Ignore
+      }
 
       // Read package.json for scripts
       try {
@@ -168,7 +185,7 @@ async function startServer() {
         // Ignore git errors
       }
 
-      res.json({ scripts, gitStatus, localBranches, remoteBranches });
+      res.json({ scripts, gitStatus, localBranches, remoteBranches, readmeContent });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }

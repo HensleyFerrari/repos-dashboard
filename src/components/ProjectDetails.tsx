@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { X, Play, RefreshCw, Trash2, Terminal, GitBranch, GitPullRequest, HardDrive, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { X, Play, RefreshCw, Trash2, Terminal, GitBranch, GitPullRequest, HardDrive, AlertCircle, CheckCircle2, FileText } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface Project {
   id: string;
@@ -19,12 +21,13 @@ interface ProjectDetailsProps {
 }
 
 export function ProjectDetails({ project, onClose, onProjectUpdate }: ProjectDetailsProps) {
-  const [activeTab, setActiveTab] = useState<'scripts' | 'git' | 'logs'>('scripts');
+  const [activeTab, setActiveTab] = useState<'scripts' | 'git' | 'logs' | 'readme'>('scripts');
   const [details, setDetails] = useState<{ 
     scripts: Record<string, string>, 
     gitStatus: any, 
     localBranches: string[],
-    remoteBranches: string[]
+    remoteBranches: string[],
+    readmeContent: string | null
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [logs, setLogs] = useState<string>('');
@@ -253,6 +256,14 @@ export function ProjectDetails({ project, onClose, onProjectUpdate }: ProjectDet
         >
           Logs
         </button>
+        <button
+          onClick={() => setActiveTab('readme')}
+          className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+            activeTab === 'readme' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          Readme
+        </button>
       </div>
 
       {/* Content */}
@@ -403,6 +414,27 @@ export function ProjectDetails({ project, onClose, onProjectUpdate }: ProjectDet
                     </div>
                   </div>
                 </div>
+              </div>
+            )}
+
+            {activeTab === 'readme' && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 mb-4 border-b border-gray-100 pb-2">
+                  <FileText className="w-5 h-5 text-gray-500" />
+                  <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">Readme.md</h3>
+                </div>
+                {details?.readmeContent ? (
+                  <div className="prose prose-sm max-w-none text-gray-800 prose-headings:text-gray-900 prose-a:text-blue-600 hover:prose-a:text-blue-500 prose-code:bg-gray-100 prose-code:text-blue-600 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none prose-pre:bg-gray-900 prose-pre:text-gray-100 prose-pre:prose-code:bg-transparent prose-pre:prose-code:text-gray-100 prose-pre:prose-code:px-0 prose-pre:prose-code:py-0 p-4 bg-white border border-gray-100 rounded-lg shadow-sm">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {details.readmeContent}
+                    </ReactMarkdown>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-12 text-gray-500 space-y-3 bg-gray-50 rounded-lg border border-dashed border-gray-200">
+                    <FileText className="w-10 h-10 text-gray-400" />
+                    <p className="text-sm">No README.md found in this repository.</p>
+                  </div>
+                )}
               </div>
             )}
 
