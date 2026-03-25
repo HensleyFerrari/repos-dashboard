@@ -1,0 +1,299 @@
+import { ipcMain, dialog, BrowserWindow } from 'electron';
+import fs from 'fs/promises';
+import path from 'path';
+import { simpleGit } from 'simple-git';
+import { exec } from 'child_process';
+import type { Project } from './types';
+
+// Helper to get folder size recursively
+async function getFolderSize(dirPath: string): Promise<number> {
+  let size = 0;
+  try {
+    const files = await fs.readdir(dirPath, { withFileTypes: true });
+    for (const file of files) {
+      const filePath = path.join(dirPath, file.name);
+      if (file.isDirectory()) {
+        if (file.name !== '.git') {
+          size += await getFolderSize(filePath);
+        }
+      } else {
+        const stats = await fs.stat(filePath);
+        size += stats.size;
+      }
+    }
+  } catch (err) {
+    // Ignore errors for unreadable files
+  }
+  return size;
+}
+
+// Format bytes
+function formatBytes(bytes: number, decimals = 2) {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const dm = decimals < 0 ? 0 : decimals;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+}
+
+export function registerIpcHandlers() {
+  // Select directory using native dialog
+  ipcMain.handle('select-directory', async () => {
+    const win = BrowserWindow.getFocusedWindow();
+    if (!win) return null;
+
+    const result = await dialog.showOpenDialog(win, {
+      properties: ['openDirectory'],
+      title: 'Select projects root directory',
+    });
+
+    if (result.canceled || result.filePaths.length === 0) return null;
+    return result.filePaths[0];
+  });
+
+  // Scan directory for projects
+  ipcMain.handle('scan-directory', async (_event, rootPath: string) => {
+    if (!rootPath) {
+      return { projects: [], error: 'rootPath is required' };
+    }
+
+    try {
+      const resolvedPath = path.resolve(rootPath);
+      const projects: Project[] = [];
+      const ignoredFolders = ['node_modules', 'vendor', 'dist', 'build', 'venv', '.venv', 'env', '.env'];
+
+      async function scanDirectory(dirPath: string) {
+        try {
+          const items = await fs.readdir(dirPath, { withFileTypes: true });
+
+          if (dirPath !== resolvedPath) {
+            let stack = 'Unknown';
+            const itemNames = items.map(i => i.name);
+            const hasGit = items.some(i => i.name === '.git' && i.isDirectory());
+            const hasPackageJson = itemNames.includes('package.json');
+            const hasComposerJson = itemNames.includes('composer.json');
+            const hasRequirementsTxt = itemNames.includes('requirements.txt') ||
+                                      itemNames.includes('manage.py') ||
+                                      itemNames.includes('pyproject.toml') ||
+                                      itemNames.includes('setup.py');
+
+            if (hasPackageJson) stack = 'Node.js';
+            else if (hasComposerJson) stack = 'PHP';
+            else if (hasRequirementsTxt) stack = 'Python';
+            else if (hasGit) stack = 'Other';
+
+            if (stack !== 'Unknown') {
+              let branch = 'N/A';
+              let isDirty = false;
+              try {
+                const git = simpleGit(dirPath);
+                const isRepo = await git.checkIsRepo();
+                if (isRepo) {
+                  const status = await git.status();
+                  branch = status.current || 'N/A';
+                  isDirty = !status.isClean();
+                }
+              } catch (e) {
+                // Ignore git errors
+              }
+
+              const sizeBytes = await getFolderSize(dirPath);
+              projects.push({
+                id: dirPath,
+                name: path.basename(dirPath),
+                path: dirPath,
+                stack,
+                branch,
+                isDirty,
+                size: formatBytes(sizeBytes),
+                sizeBytes,
+              });
+
+              // Stop scanning deeper in this directory once it's identified as a project
+              return;
+            }
+          }
+
+          const promises = [];
+          for (const item of items) {
+            if (item.isDirectory()) {
+              const name = item.name;
+              if (!name.startsWith('.') && !ignoredFolders.includes(name)) {
+                promises.push(scanDirectory(path.join(dirPath, name)));
+              }
+            }
+          }
+          await Promise.all(promises);
+        } catch (e) {
+          // Ignore unreadable directories
+        }
+      }
+
+      await scanDirectory(resolvedPath);
+      return { projects };
+    } catch (error: any) {
+      return { projects: [], error: error.message };
+    }
+  });
+
+  // Get project details
+  ipcMain.handle('project-details', async (_event, projectPath: string) => {
+    if (!projectPath) {
+      throw new Error('projectPath is required');
+    }
+
+    let scripts: Record<string, string> = {};
+    let gitStatus = null;
+    let localBranches: string[] = [];
+    let remoteBranches: string[] = [];
+    let readmeContent: string | null = null;
+
+    // Read README.md
+    try {
+      const readmeFiles = ['README.md', 'readme.md', 'README.MD', 'Readme.md'];
+      for (const file of readmeFiles) {
+        try {
+          const readmePath = path.join(projectPath, file);
+          readmeContent = await fs.readFile(readmePath, 'utf-8');
+          break;
+        } catch (e) {
+          // Not found, try next
+        }
+      }
+    } catch (e) {
+      // Ignore
+    }
+
+    // Read package.json for scripts
+    try {
+      const pkgJsonPath = path.join(projectPath, 'package.json');
+      const pkgData = await fs.readFile(pkgJsonPath, 'utf-8');
+      const pkg = JSON.parse(pkgData);
+      scripts = pkg.scripts || {};
+    } catch (e) {
+      // Ignore if no package.json
+    }
+
+    // Git details
+    try {
+      const git = simpleGit(projectPath);
+      const isRepo = await git.checkIsRepo();
+      if (isRepo) {
+        gitStatus = await git.status();
+        const branchSummary = await git.branch();
+        const allBranches = branchSummary.all;
+        localBranches = allBranches.filter(b => !b.startsWith('remotes/'));
+        remoteBranches = allBranches.filter(b => b.startsWith('remotes/'));
+      }
+    } catch (e) {
+      // Ignore git errors
+    }
+
+    return { scripts, gitStatus, localBranches, remoteBranches, readmeContent };
+  });
+
+  // Run command in project directory
+  ipcMain.handle('project-run', async (_event, projectPath: string, command: string) => {
+    if (!projectPath || !command) {
+      throw new Error('projectPath and command are required');
+    }
+
+    return new Promise((resolve) => {
+      exec(command, { cwd: projectPath }, (error, stdout, stderr) => {
+        resolve({
+          stdout,
+          stderr,
+          error: error ? error.message : null,
+        });
+      });
+    });
+  });
+
+  // Nuke node_modules
+  ipcMain.handle('project-nuke', async (_event, projectPath: string) => {
+    if (!projectPath) {
+      throw new Error('projectPath is required');
+    }
+
+    const nodeModulesPath = path.join(projectPath, 'node_modules');
+    await fs.rm(nodeModulesPath, { recursive: true, force: true });
+
+    // Recalculate size after nuking
+    const sizeBytes = await getFolderSize(projectPath);
+    const size = formatBytes(sizeBytes);
+
+    return {
+      success: true,
+      message: 'node_modules deleted successfully',
+      size,
+      sizeBytes,
+    };
+  });
+
+  // Refresh project size
+  ipcMain.handle('project-refresh-size', async (_event, projectPath: string) => {
+    if (!projectPath) {
+      throw new Error('projectPath is required');
+    }
+
+    const sizeBytes = await getFolderSize(projectPath);
+    const size = formatBytes(sizeBytes);
+    return { size, sizeBytes };
+  });
+
+  // Git sync and prune
+  ipcMain.handle('project-git-sync', async (_event, projectPath: string) => {
+    if (!projectPath) {
+      throw new Error('projectPath is required');
+    }
+
+    const git = simpleGit(projectPath);
+    const isRepo = await git.checkIsRepo();
+    if (!isRepo) {
+      throw new Error('Not a git repository');
+    }
+
+    const logs: string[] = [];
+
+    // 1. Fetch and prune
+    logs.push('Fetching and pruning remotes...');
+    await git.fetch(['--prune']);
+    logs.push('Fetch complete.');
+
+    // 2. Identify and delete gone branches
+    const branchSummary = await git.branch(['-vv']);
+    const currentBranch = branchSummary.current;
+
+    const rawStatus = await git.raw(['branch', '-vv']);
+    const goneBranches = rawStatus.split('\n')
+      .filter(line => line.includes(': gone]'))
+      .map(line => {
+        const match = line.match(/^[* ]\s+([^\s]+)\s+/);
+        return match ? match[1] : null;
+      })
+      .filter(name => name && name !== currentBranch) as string[];
+
+    const deletedBranches: string[] = [];
+    if (goneBranches.length > 0) {
+      logs.push(`Found ${goneBranches.length} obsolete branches: ${goneBranches.join(', ')}`);
+      for (const branch of goneBranches) {
+        try {
+          await git.deleteLocalBranch(branch, true);
+          deletedBranches.push(branch);
+          logs.push(`Deleted branch: ${branch}`);
+        } catch (e: any) {
+          logs.push(`Failed to delete branch ${branch}: ${e.message}`);
+        }
+      }
+    } else {
+      logs.push('No obsolete local branches found.');
+    }
+
+    return {
+      success: true,
+      logs: logs.join('\n'),
+      deletedCount: deletedBranches.length,
+    };
+  });
+}

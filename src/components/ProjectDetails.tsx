@@ -72,12 +72,7 @@ export function ProjectDetails({ project, onClose, onProjectUpdate }: ProjectDet
   const fetchDetails = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/project/details', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ projectPath: project.path })
-      });
-      const data = await res.json();
+      const data = await window.electronAPI.getProjectDetails(project.path);
       setDetails(data);
     } catch (e) {
       console.error(e);
@@ -92,12 +87,7 @@ export function ProjectDetails({ project, onClose, onProjectUpdate }: ProjectDet
     setLogs((prev) => prev + `\n$ ${command}\n`);
     
     try {
-      const res = await fetch('/api/project/run', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ projectPath: project.path, command })
-      });
-      const data = await res.json();
+      const data = await window.electronAPI.runCommand(project.path, command);
       
       if (data.error) {
         setLogs((prev) => prev + `Error: ${data.error}\n`);
@@ -125,21 +115,12 @@ export function ProjectDetails({ project, onClose, onProjectUpdate }: ProjectDet
     setLogs((prev) => prev + `\n$ Nuke node_modules...\n`);
     
     try {
-      const res = await fetch('/api/project/nuke', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ projectPath: project.path })
-      });
-      const data = await res.json();
+      const data = await window.electronAPI.nukeNodeModules(project.path);
       
-      if (data.error) {
-        setLogs((prev) => prev + `Error: ${data.error}\n`);
-      } else {
-        setLogs((prev) => prev + `${data.message}\n`);
-        if (data.size) {
-          onProjectUpdate({ id: project.id, size: data.size, sizeBytes: data.sizeBytes });
-          setLogs((prev) => prev + `New project size: ${data.size}\n`);
-        }
+      setLogs((prev) => prev + `${data.message}\n`);
+      if (data.size) {
+        onProjectUpdate({ id: project.id, size: data.size, sizeBytes: data.sizeBytes });
+        setLogs((prev) => prev + `New project size: ${data.size}\n`);
       }
     } catch (e: any) {
       setLogs((prev) => prev + `Failed to execute: ${e.message}\n`);
@@ -154,19 +135,10 @@ export function ProjectDetails({ project, onClose, onProjectUpdate }: ProjectDet
     setLogs((prev) => prev + `\n$ Recalculating project size...\n`);
     
     try {
-      const res = await fetch('/api/project/refresh-size', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ projectPath: project.path })
-      });
-      const data = await res.json();
+      const data = await window.electronAPI.refreshSize(project.path);
       
-      if (data.error) {
-        setLogs((prev) => prev + `Error: ${data.error}\n`);
-      } else {
-        onProjectUpdate({ id: project.id, size: data.size, sizeBytes: data.sizeBytes });
-        setLogs((prev) => prev + `Recalculation complete. New size: ${data.size}\n`);
-      }
+      onProjectUpdate({ id: project.id, size: data.size, sizeBytes: data.sizeBytes });
+      setLogs((prev) => prev + `Recalculation complete. New size: ${data.size}\n`);
     } catch (e: any) {
       setLogs((prev) => prev + `Failed to execute: ${e.message}\n`);
     } finally {
@@ -180,20 +152,11 @@ export function ProjectDetails({ project, onClose, onProjectUpdate }: ProjectDet
     setLogs((prev) => prev + `\n$ Syncing with remote and pruning...\n`);
     
     try {
-      const res = await fetch('/api/project/git-sync', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ projectPath: project.path })
-      });
-      const data = await res.json();
+      const data = await window.electronAPI.gitSync(project.path);
       
-      if (data.error) {
-        setLogs((prev) => prev + `Error: ${data.error}\n`);
-      } else {
-        setLogs((prev) => prev + `${data.logs}\n`);
-        setLogs((prev) => prev + `Successfully deleted ${data.deletedCount} obsolete branches.\n`);
-        await fetchDetails(); // Refresh branches
-      }
+      setLogs((prev) => prev + `${data.logs}\n`);
+      setLogs((prev) => prev + `Successfully deleted ${data.deletedCount} obsolete branches.\n`);
+      await fetchDetails(); // Refresh branches
     } catch (e: any) {
       setLogs((prev) => prev + `Failed to execute: ${e.message}\n`);
     } finally {

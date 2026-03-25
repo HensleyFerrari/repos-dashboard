@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { ProjectCard } from './components/ProjectCard';
 import { ProjectDetails } from './components/ProjectDetails';
-import { FolderSearch, Loader2, AlertCircle } from 'lucide-react';
+import { FolderSearch, Loader2, AlertCircle, FolderOpen } from 'lucide-react';
 
 interface Project {
   id: string;
@@ -39,13 +39,7 @@ export default function App() {
     setError('');
     
     try {
-      const res = await fetch('/api/scan', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rootPath: path })
-      });
-      
-      const data = await res.json();
+      const data = await window.electronAPI.scanDirectory(path);
       
       if (data.error) {
         setError(data.error);
@@ -54,7 +48,7 @@ export default function App() {
         localStorage.setItem('projectDashRootPath', path);
       }
     } catch (err: any) {
-      setError('Failed to connect to server. Make sure the backend is running.');
+      setError('Failed to scan directory: ' + (err.message || 'Unknown error'));
     } finally {
       setLoading(false);
     }
@@ -73,6 +67,14 @@ export default function App() {
   const handleScan = (e: React.FormEvent) => {
     e.preventDefault();
     scanDirectory(rootPath);
+  };
+
+  const handleSelectDirectory = async () => {
+    const selected = await window.electronAPI.selectDirectory();
+    if (selected) {
+      setRootPath(selected);
+      scanDirectory(selected);
+    }
   };
 
   const categories = [
@@ -100,23 +102,33 @@ export default function App() {
         <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between z-10">
           <h2 className="text-xl font-semibold text-gray-800">Dashboard</h2>
           
-          <form onSubmit={handleScan} className="flex items-center gap-2">
-            <input
-              type="text"
-              value={rootPath}
-              onChange={(e) => setRootPath(e.target.value)}
-              placeholder="Enter root directory path (e.g., /workspace)"
-              className="w-80 px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
+          <div className="flex items-center gap-2">
             <button
-              type="submit"
-              disabled={loading || !rootPath.trim()}
-              className="px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              onClick={handleSelectDirectory}
+              className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-500 transition-colors flex items-center gap-2"
+              title="Select root directory"
             >
-              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <FolderSearch className="w-4 h-4" />}
-              Scan
+              <FolderOpen className="w-4 h-4" />
+              Select Folder
             </button>
-          </form>
+            <form onSubmit={handleScan} className="flex items-center gap-2">
+              <input
+                type="text"
+                value={rootPath}
+                onChange={(e) => setRootPath(e.target.value)}
+                placeholder="Enter root directory path (e.g., C:\Projects)"
+                className="w-80 px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+              <button
+                type="submit"
+                disabled={loading || !rootPath.trim()}
+                className="px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <FolderSearch className="w-4 h-4" />}
+                Scan
+              </button>
+            </form>
+          </div>
         </header>
 
         {/* Content */}
@@ -139,7 +151,7 @@ export default function App() {
               <div className="text-center">
                 <h3 className="text-lg font-medium text-gray-900">No projects found</h3>
                 <p className="text-sm mt-1 max-w-md">
-                  Enter a directory path above and click Scan to find your projects.
+                  Click "Select Folder" or enter a directory path above and click Scan to find your projects.
                   We look for Git repositories, package.json, composer.json, or Python project files.
                 </p>
               </div>
