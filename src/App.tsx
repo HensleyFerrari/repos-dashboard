@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Sidebar } from './components/Sidebar';
 import { ProjectCard } from './components/ProjectCard';
 import { ProjectDetails } from './components/ProjectDetails';
-import { FolderSearch, Loader2, AlertCircle, FolderOpen, Search } from 'lucide-react';
+import { SettingsModal } from './components/SettingsModal';
+import { FolderSearch, Loader2, AlertCircle, FolderOpen, Search, TerminalSquare, Settings } from 'lucide-react';
 
 interface Project {
   id: string;
@@ -20,9 +20,9 @@ export default function App() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [activeCategory, setActiveCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   // Load saved path on mount
   useEffect(() => {
@@ -78,35 +78,25 @@ export default function App() {
     }
   };
 
-  const categories = [
-    { name: 'All', count: projects.length, icon: <FolderSearch className="w-4 h-4" /> },
-    { name: 'Node.js', count: projects.filter(p => p.stack === 'Node.js').length, icon: <div className="w-3 h-3 rounded-full bg-green-500" /> },
-    { name: 'PHP', count: projects.filter(p => p.stack === 'PHP').length, icon: <div className="w-3 h-3 rounded-full bg-indigo-500" /> },
-    { name: 'Python', count: projects.filter(p => p.stack === 'Python').length, icon: <div className="w-3 h-3 rounded-full bg-blue-500" /> },
-    { name: 'Other', count: projects.filter(p => p.stack === 'Other').length, icon: <div className="w-3 h-3 rounded-full bg-gray-400" /> },
-  ];
-
   const filteredProjects = projects.filter(p => {
-    const matchesCategory = activeCategory === 'All' || p.stack === activeCategory;
-    const matchesSearch = p.name.toLowerCase().includes(searchQuery.trim().toLowerCase());
-    return matchesCategory && matchesSearch;
+    return p.name.toLowerCase().includes(searchQuery.trim().toLowerCase());
   });
 
   return (
     <div className="flex h-screen bg-gray-50 font-sans overflow-hidden">
-      <Sidebar 
-        categories={categories} 
-        activeCategory={activeCategory} 
-        onSelectCategory={setActiveCategory} 
-      />
-      
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
         {/* Header */}
-        <header className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between z-10 gap-4">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-4 shrink-0 w-full sm:w-auto">
-            <h2 className="text-xl font-semibold text-gray-800 hidden lg:block">Dashboard</h2>
+        <header className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between z-10 gap-4 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-6 shrink-0 w-full sm:w-auto">
+            {/* App Logo */}
+            <div className="flex items-center gap-2.5">
+              <div className="p-1.5 bg-gray-900 rounded-lg shadow-sm">
+                <TerminalSquare className="w-5 h-5 text-blue-400" />
+              </div>
+              <h1 className="font-bold text-lg tracking-tight text-gray-900 hidden lg:block">Project Dash</h1>
+            </div>
             
-            <div className="relative w-full sm:w-64 lg:w-80">
+            <div className="relative w-full sm:w-64 lg:w-96">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
                 type="text"
@@ -134,17 +124,27 @@ export default function App() {
                 value={rootPath}
                 onChange={(e) => setRootPath(e.target.value)}
                 placeholder="Root directory path..."
-                className="flex-1 sm:w-64 lg:w-80 px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent min-w-0 truncate"
+                className="flex-1 sm:w-64 px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-0 truncate"
               />
               <button
                 type="submit"
                 disabled={loading || !rootPath.trim()}
-                className="px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shrink-0"
+                className="px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shrink-0 shadow-sm"
               >
                 {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <FolderSearch className="w-4 h-4" />}
                 <span className="hidden md:inline">Scan</span>
               </button>
             </form>
+            
+            {/* Settings Button */}
+            <div className="hidden sm:block w-px h-6 bg-gray-200 mx-1"></div>
+            <button
+              onClick={() => setIsSettingsOpen(true)}
+              className="p-2 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors border border-transparent hover:border-gray-200"
+              title="Settings"
+            >
+              <Settings className="w-5 h-5" />
+            </button>
           </div>
         </header>
 
@@ -189,16 +189,13 @@ export default function App() {
               <div className="text-center px-4">
                 <h3 className="text-lg font-medium text-gray-900">No matching projects</h3>
                 <p className="text-sm mt-1 max-w-sm">
-                  We couldn't find any projects matching "{searchQuery}" in the {activeCategory} category.
+                  We couldn't find any projects matching "{searchQuery}".
                 </p>
                 <button
-                  onClick={() => {
-                    setSearchQuery('');
-                    setActiveCategory('All');
-                  }}
+                  onClick={() => setSearchQuery('')}
                   className="mt-4 px-4 py-2 text-sm text-blue-600 hover:text-blue-700 font-medium bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
                 >
-                  Clear filters
+                  Clear search
                 </button>
               </div>
             </div>
@@ -231,6 +228,11 @@ export default function App() {
             />
           </>
         )}
+
+        <SettingsModal 
+          isOpen={isSettingsOpen} 
+          onClose={() => setIsSettingsOpen(false)} 
+        />
       </main>
     </div>
   );
