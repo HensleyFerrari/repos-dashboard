@@ -150,11 +150,11 @@ async function startServer() {
         const isRepo = await git.checkIsRepo();
         if (isRepo) {
           gitStatus = await git.status();
-          const localSummary = await git.branchLocal();
-          const allSummary = await git.branch();
+          const branchSummary = await git.branch();
           
-          localBranches = localSummary.all;
-          remoteBranches = allSummary.all.filter(b => !localBranches.includes(b));
+          const allBranches = branchSummary.all;
+          localBranches = allBranches.filter(b => !b.startsWith('remotes/'));
+          remoteBranches = allBranches.filter(b => b.startsWith('remotes/'));
         }
       } catch (e) {
         // Ignore git errors
