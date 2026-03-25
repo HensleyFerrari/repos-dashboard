@@ -182,7 +182,30 @@ async function startServer() {
     try {
       const nodeModulesPath = path.join(projectPath, 'node_modules');
       await fs.rm(nodeModulesPath, { recursive: true, force: true });
-      res.json({ success: true, message: 'node_modules deleted successfully' });
+      
+      // Recalculate size after nuking
+      const sizeBytes = await getFolderSize(projectPath);
+      const size = formatBytes(sizeBytes);
+      
+      res.json({ 
+        success: true, 
+        message: 'node_modules deleted successfully',
+        size,
+        sizeBytes
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post('/api/project/refresh-size', async (req, res) => {
+    const { projectPath } = req.body;
+    if (!projectPath) return res.status(400).json({ error: 'projectPath is required' });
+
+    try {
+      const sizeBytes = await getFolderSize(projectPath);
+      const size = formatBytes(sizeBytes);
+      res.json({ size, sizeBytes });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }

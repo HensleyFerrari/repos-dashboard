@@ -9,14 +9,16 @@ interface Project {
   branch: string;
   isDirty: boolean;
   size: string;
+  sizeBytes: number;
 }
 
 interface ProjectDetailsProps {
   project: Project;
   onClose: () => void;
+  onProjectUpdate: (project: Partial<Project> & { id: string }) => void;
 }
 
-export function ProjectDetails({ project, onClose }: ProjectDetailsProps) {
+export function ProjectDetails({ project, onClose, onProjectUpdate }: ProjectDetailsProps) {
   const [activeTab, setActiveTab] = useState<'scripts' | 'git' | 'logs'>('scripts');
   const [details, setDetails] = useState<{ scripts: Record<string, string>, gitStatus: any, branches: string[] } | null>(null);
   const [loading, setLoading] = useState(true);
@@ -89,6 +91,36 @@ export function ProjectDetails({ project, onClose }: ProjectDetailsProps) {
         setLogs((prev) => prev + `Error: ${data.error}\n`);
       } else {
         setLogs((prev) => prev + `${data.message}\n`);
+        if (data.size) {
+          onProjectUpdate({ id: project.id, size: data.size, sizeBytes: data.sizeBytes });
+          setLogs((prev) => prev + `New project size: ${data.size}\n`);
+        }
+      }
+    } catch (e: any) {
+      setLogs((prev) => prev + `Failed to execute: ${e.message}\n`);
+    } finally {
+      setIsRunning(false);
+    }
+  };
+
+  const refreshSize = async () => {
+    setActiveTab('logs');
+    setIsRunning(true);
+    setLogs((prev) => prev + `\n$ Recalculating project size...\n`);
+    
+    try {
+      const res = await fetch('/api/project/refresh-size', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectPath: project.path })
+      });
+      const data = await res.json();
+      
+      if (data.error) {
+        setLogs((prev) => prev + `Error: ${data.error}\n`);
+      } else {
+        onProjectUpdate({ id: project.id, size: data.size, sizeBytes: data.sizeBytes });
+        setLogs((prev) => prev + `Recalculation complete. New size: ${data.size}\n`);
       }
     } catch (e: any) {
       setLogs((prev) => prev + `Failed to execute: ${e.message}\n`);
@@ -179,16 +211,26 @@ export function ProjectDetails({ project, onClose }: ProjectDetailsProps) {
 
                 <div className="pt-4 border-t border-gray-100">
                   <h3 className="text-sm font-semibold text-gray-900 mb-3 uppercase tracking-wider">Maintenance</h3>
-                  <button
-                    onClick={nukeNodeModules}
-                    disabled={isRunning || project.stack !== 'Node.js'}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-red-50 text-red-600 border border-red-200 rounded-lg hover:bg-red-100 transition-colors disabled:opacity-50"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    <span className="font-medium">Nuke node_modules</span>
-                  </button>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      onClick={refreshSize}
+                      disabled={isRunning}
+                      className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors disabled:opacity-50"
+                    >
+                      <HardDrive className="w-4 h-4" />
+                      <span className="font-medium text-sm">Recalculate Size</span>
+                    </button>
+                    <button
+                      onClick={nukeNodeModules}
+                      disabled={isRunning || project.stack !== 'Node.js'}
+                      className="flex items-center justify-center gap-2 px-4 py-2 bg-red-50 text-red-600 border border-red-200 rounded-lg hover:bg-red-100 transition-colors disabled:opacity-50"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      <span className="font-medium text-sm">Nuke node_modules</span>
+                    </button>
+                  </div>
                   <p className="text-xs text-gray-500 mt-2 text-center">
-                    Frees up disk space by deleting dependencies.
+                    Manage your project's disk footprint.
                   </p>
                 </div>
               </div>

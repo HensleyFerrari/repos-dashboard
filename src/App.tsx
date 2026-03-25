@@ -12,6 +12,7 @@ interface Project {
   branch: string;
   isDirty: boolean;
   size: string;
+  sizeBytes: number;
 }
 
 export default function App() {
@@ -56,6 +57,16 @@ export default function App() {
       setError('Failed to connect to server. Make sure the backend is running.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleProjectUpdate = (updatedProject: Partial<Project> & { id: string }) => {
+    setProjects(prev => prev.map(p => 
+      p.id === updatedProject.id ? { ...p, ...updatedProject } : p
+    ));
+    
+    if (selectedProject?.id === updatedProject.id) {
+      setSelectedProject(prev => prev ? { ...prev, ...updatedProject } : null);
     }
   };
 
@@ -164,6 +175,7 @@ export default function App() {
             <ProjectDetails 
               project={selectedProject} 
               onClose={() => setSelectedProject(null)} 
+              onProjectUpdate={handleProjectUpdate}
             />
           </>
         )}
