@@ -323,4 +323,22 @@ export function registerIpcHandlers() {
       deletedCount: deletedBranches.length,
     };
   });
+
+  // Open project in IDE
+  ipcMain.handle('project-open-ide', async (_event, projectPath: string, ideCommand: string) => {
+    if (!projectPath || !ideCommand) {
+      throw new Error('projectPath and ideCommand are required');
+    }
+
+    const normalizedPath = normalizePath(projectPath);
+    return new Promise((resolve) => {
+      // Use exec to spawn the IDE command with the path
+      exec(`${ideCommand} "${normalizedPath}"`, (error) => {
+        resolve({
+          success: !error,
+          error: error ? error.message : null,
+        });
+      });
+    });
+  });
 }

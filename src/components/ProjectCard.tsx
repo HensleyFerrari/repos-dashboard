@@ -1,5 +1,5 @@
 import React from 'react';
-import { Folder, GitBranch, HardDrive, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Folder, GitBranch, HardDrive, AlertCircle, CheckCircle2, Code2 } from 'lucide-react';
 
 interface Project {
   id: string;
@@ -26,6 +26,15 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
     }
   };
 
+  const handleOpenIde = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await window.electronAPI.openInIde(project.path, 'code');
+    } catch (err) {
+      console.error('Failed to open IDE from card:', err);
+    }
+  };
+
   return (
     <div 
       onClick={onClick}
@@ -45,9 +54,19 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
             </p>
           </div>
         </div>
-        <span className={`text-xs px-2.5 py-1 rounded-full border font-medium whitespace-nowrap shrink-0 ${getStackColor(project.stack)}`}>
-          {project.stack}
-        </span>
+        
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            onClick={handleOpenIde}
+            className="opacity-0 group-hover:opacity-100 p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-all"
+            title="Quick Open in VS Code"
+          >
+            <Code2 className="w-4 h-4" />
+          </button>
+          <span className={`text-xs px-2.5 py-1 rounded-full border font-medium whitespace-nowrap ${getStackColor(project.stack)}`}>
+            {project.stack}
+          </span>
+        </div>
       </div>
 
       <div className="mt-auto space-y-3">

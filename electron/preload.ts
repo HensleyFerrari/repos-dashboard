@@ -20,6 +20,9 @@ const electronAPI: ElectronAPI = {
   gitSync: (projectPath: string) =>
     ipcRenderer.invoke('project-git-sync', projectPath),
 
+  openInIde: (projectPath: string, ideCommand: string) =>
+    ipcRenderer.invoke('project-open-ide', projectPath, ideCommand),
+
   selectDirectory: () =>
     ipcRenderer.invoke('select-directory'),
 };

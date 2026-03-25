@@ -46,6 +46,11 @@ export interface GitSyncResult {
   deletedCount: number;
 }
 
+export interface OpenIdeResult {
+  success: boolean;
+  error: string | null;
+}
+
 export interface ElectronAPI {
   scanDirectory: (rootPath: string) => Promise<ScanResult>;
   getProjectDetails: (projectPath: string) => Promise<ProjectDetailsResult>;
@@ -53,5 +58,6 @@ export interface ElectronAPI {
   nukeNodeModules: (projectPath: string) => Promise<NukeResult>;
   refreshSize: (projectPath: string) => Promise<SizeResult>;
   gitSync: (projectPath: string) => Promise<GitSyncResult>;
+  openInIde: (projectPath: string, ideCommand: string) => Promise<OpenIdeResult>;
   selectDirectory: () => Promise<string | null>;
 }

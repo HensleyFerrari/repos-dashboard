@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Play, RefreshCw, Trash2, Terminal, GitBranch, GitPullRequest, HardDrive, AlertCircle, CheckCircle2, FileText } from 'lucide-react';
+import { X, Play, RefreshCw, Trash2, Terminal, GitBranch, GitPullRequest, HardDrive, AlertCircle, CheckCircle2, FileText, Code2, TerminalSquare, Sparkles } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
@@ -165,6 +165,31 @@ export function ProjectDetails({ project, onClose, onProjectUpdate }: ProjectDet
     }
   };
 
+  const openIde = async (ideCommand: string) => {
+    const ideName = ideCommand === 'code' ? 'VS Code' : ideCommand === 'cursor' ? 'Cursor' : ideCommand === 'antigravity' ? 'Antigravity' : ideCommand;
+    setActiveTab('logs');
+    setIsRunning(true);
+    setLogs((prev) => prev + `\n$ Opening in ${ideName}...\n`);
+    
+    try {
+      const data = await window.electronAPI.openInIde(project.path, ideCommand);
+      
+      if (data.error) {
+        if (data.error.includes('ENOENT') || data.error.includes('is not recognized')) {
+          setLogs((prev) => prev + `Error: ${ideName} is not installed or not in your system PATH.\n`);
+        } else {
+          setLogs((prev) => prev + `Error: ${data.error}\n`);
+        }
+      } else {
+        setLogs((prev) => prev + `Successfully opened project in ${ideName}.\n`);
+      }
+    } catch (e: any) {
+      setLogs((prev) => prev + `Failed to execute: ${e.message}\n`);
+    } finally {
+      setIsRunning(false);
+    }
+  };
+
   return (
     <div 
       className="fixed inset-y-0 right-0 bg-white shadow-2xl border-l border-gray-200 flex flex-col z-50 transform transition-transform duration-300"
@@ -181,17 +206,46 @@ export function ProjectDetails({ project, onClose, onProjectUpdate }: ProjectDet
         <div className="w-0.5 h-8 bg-gray-300 group-hover:bg-blue-300 rounded-full transition-colors" />
       </div>
       {/* Header */}
-      <div className="p-5 border-b border-gray-100 flex items-center justify-between bg-gray-50 gap-4">
-        <div className="min-w-0 flex-1">
-          <h2 className="text-xl font-bold text-gray-900 truncate" title={project.name}>{project.name}</h2>
-          <p className="text-sm text-gray-500 truncate font-mono" title={project.path}>{project.path}</p>
+      <div className="p-5 border-b border-gray-100 bg-gray-50">
+        <div className="flex items-start justify-between gap-4 mb-3">
+          <div className="min-w-0 flex-1">
+            <h2 className="text-xl font-bold text-gray-900 truncate" title={project.name}>{project.name}</h2>
+            <p className="text-sm text-gray-500 truncate font-mono" title={project.path}>{project.path}</p>
+          </div>
+          <button 
+            onClick={onClose}
+            className="p-2 hover:bg-gray-200 rounded-full transition-colors text-gray-500 flex-shrink-0"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
-        <button 
-          onClick={onClose}
-          className="p-2 hover:bg-gray-200 rounded-full transition-colors text-gray-500 flex-shrink-0"
-        >
-          <X className="w-5 h-5" />
-        </button>
+        
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => openIde('code')}
+            disabled={isRunning}
+            className="px-3 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-md text-xs font-medium flex items-center gap-1.5 transition-colors disabled:opacity-50"
+            title="Open in Visual Studio Code"
+          >
+            <Code2 className="w-3.5 h-3.5" /> VS Code
+          </button>
+          <button
+            onClick={() => openIde('cursor')}
+            disabled={isRunning}
+            className="px-3 py-1.5 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded-md text-xs font-medium flex items-center gap-1.5 transition-colors disabled:opacity-50"
+            title="Open in Cursor"
+          >
+            <TerminalSquare className="w-3.5 h-3.5" /> Cursor
+          </button>
+          <button
+            onClick={() => openIde('antigravity')}
+            disabled={isRunning}
+            className="px-3 py-1.5 bg-purple-50 text-purple-600 hover:bg-purple-100 rounded-md text-xs font-medium flex items-center gap-1.5 transition-colors disabled:opacity-50"
+            title="Open in Antigravity"
+          >
+            <Sparkles className="w-3.5 h-3.5" /> Antigravity
+          </button>
+        </div>
       </div>
 
       {/* Tabs */}
