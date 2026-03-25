@@ -64,13 +64,18 @@ async function startServer() {
           if (dirPath !== resolvedPath) {
             let stack = 'Unknown';
             const itemNames = items.map(i => i.name);
+            const hasGit = items.some(i => i.name === '.git' && i.isDirectory());
             const hasPackageJson = itemNames.includes('package.json');
             const hasComposerJson = itemNames.includes('composer.json');
-            const hasRequirementsTxt = itemNames.includes('requirements.txt') || itemNames.includes('manage.py');
+            const hasRequirementsTxt = itemNames.includes('requirements.txt') || 
+                                      itemNames.includes('manage.py') || 
+                                      itemNames.includes('pyproject.toml') || 
+                                      itemNames.includes('setup.py');
 
             if (hasPackageJson) stack = 'Node.js';
             else if (hasComposerJson) stack = 'PHP';
             else if (hasRequirementsTxt) stack = 'Python';
+            else if (hasGit) stack = 'Other';
 
             if (stack !== 'Unknown') {
               let branch = 'N/A';
@@ -98,6 +103,9 @@ async function startServer() {
                 size: formatBytes(sizeBytes),
                 sizeBytes
               });
+
+              // Stop scanning deeper in this directory once it's identified as a project
+              return;
             }
           }
 

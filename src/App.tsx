@@ -80,6 +80,7 @@ export default function App() {
     { name: 'Node.js', count: projects.filter(p => p.stack === 'Node.js').length, icon: <div className="w-3 h-3 rounded-full bg-green-500" /> },
     { name: 'PHP', count: projects.filter(p => p.stack === 'PHP').length, icon: <div className="w-3 h-3 rounded-full bg-indigo-500" /> },
     { name: 'Python', count: projects.filter(p => p.stack === 'Python').length, icon: <div className="w-3 h-3 rounded-full bg-blue-500" /> },
+    { name: 'Other', count: projects.filter(p => p.stack === 'Other').length, icon: <div className="w-3 h-3 rounded-full bg-gray-400" /> },
   ];
 
   const filteredProjects = activeCategory === 'All' 
@@ -139,7 +140,7 @@ export default function App() {
                 <h3 className="text-lg font-medium text-gray-900">No projects found</h3>
                 <p className="text-sm mt-1 max-w-md">
                   Enter a directory path above and click Scan to find your projects.
-                  We look for package.json, composer.json, or requirements.txt.
+                  We look for Git repositories, package.json, composer.json, or Python project files.
                 </p>
               </div>
             </div>
