@@ -99,40 +99,41 @@ export default function App() {
       
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
         {/* Header */}
-        <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between z-10">
-          <h2 className="text-xl font-semibold text-gray-800">Dashboard</h2>
+        <header className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between z-10 gap-4">
+          <h2 className="text-xl font-semibold text-gray-800 shrink-0">Dashboard</h2>
           
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto min-w-0">
             <button
               onClick={handleSelectDirectory}
-              className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-500 transition-colors flex items-center gap-2"
+              className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-500 transition-colors flex items-center justify-center gap-2 whitespace-nowrap shrink-0"
               title="Select root directory"
             >
               <FolderOpen className="w-4 h-4" />
-              Select Folder
+              <span className="hidden lg:inline">Select Folder</span>
+              <span className="lg:hidden">Folder</span>
             </button>
-            <form onSubmit={handleScan} className="flex items-center gap-2">
+            <form onSubmit={handleScan} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto min-w-0">
               <input
                 type="text"
                 value={rootPath}
                 onChange={(e) => setRootPath(e.target.value)}
-                placeholder="Enter root directory path (e.g., C:\Projects)"
-                className="w-80 px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Root directory path..."
+                className="flex-1 sm:w-64 lg:w-80 px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent min-w-0 truncate"
               />
               <button
                 type="submit"
                 disabled={loading || !rootPath.trim()}
-                className="px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                className="px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shrink-0"
               >
                 {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <FolderSearch className="w-4 h-4" />}
-                Scan
+                <span className="hidden md:inline">Scan</span>
               </button>
             </form>
           </div>
         </header>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
           {error && (
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3 text-red-700">
               <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
@@ -144,15 +145,14 @@ export default function App() {
           )}
 
           {!loading && projects.length === 0 && !error && (
-            <div className="flex flex-col items-center justify-center h-full text-gray-500 space-y-4">
+            <div className="flex flex-col items-center justify-center h-full text-gray-500 space-y-4 py-12">
               <div className="p-4 bg-white rounded-full shadow-sm border border-gray-100">
                 <FolderSearch className="w-12 h-12 text-gray-400" />
               </div>
-              <div className="text-center">
+              <div className="text-center px-4">
                 <h3 className="text-lg font-medium text-gray-900">No projects found</h3>
                 <p className="text-sm mt-1 max-w-md">
                   Click "Select Folder" or enter a directory path above and click Scan to find your projects.
-                  We look for Git repositories, package.json, composer.json, or Python project files.
                 </p>
               </div>
             </div>
@@ -166,7 +166,7 @@ export default function App() {
           )}
 
           {projects.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-6">
               {filteredProjects.map(project => (
                 <ProjectCard 
                   key={project.id} 

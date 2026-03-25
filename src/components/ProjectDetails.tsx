@@ -44,7 +44,8 @@ export function ProjectDetails({ project, onClose, onProjectUpdate }: ProjectDet
       if (!isResizing) return;
       
       const newWidth = window.innerWidth - e.clientX;
-      if (newWidth >= 300 && newWidth <= 800) {
+      const maxWidth = window.innerWidth * 0.9;
+      if (newWidth >= 300 && newWidth <= maxWidth) {
         setWidth(newWidth);
       }
     };

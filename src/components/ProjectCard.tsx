@@ -31,39 +31,39 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
       onClick={onClick}
       className="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-md transition-all cursor-pointer group flex flex-col h-full"
     >
-      <div className="flex justify-between items-start mb-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-gray-50 rounded-lg group-hover:bg-blue-50 transition-colors">
+      <div className="flex justify-between items-start mb-4 gap-2">
+        <div className="flex items-center gap-3 min-w-0 flex-1">
+          <div className="p-2 bg-gray-50 rounded-lg group-hover:bg-blue-50 transition-colors shrink-0">
             <Folder className="w-6 h-6 text-gray-400 group-hover:text-blue-500" />
           </div>
-          <div>
-            <h3 className="font-semibold text-gray-900 truncate max-w-[180px]" title={project.name}>
+          <div className="min-w-0 flex-1">
+            <h3 className="font-semibold text-gray-900 truncate" title={project.name}>
               {project.name}
             </h3>
-            <p className="text-xs text-gray-500 truncate max-w-[180px]" title={project.path}>
+            <p className="text-xs text-gray-500 truncate" title={project.path}>
               {project.path}
             </p>
           </div>
         </div>
-        <span className={`text-xs px-2.5 py-1 rounded-full border font-medium ${getStackColor(project.stack)}`}>
+        <span className={`text-xs px-2.5 py-1 rounded-full border font-medium whitespace-nowrap shrink-0 ${getStackColor(project.stack)}`}>
           {project.stack}
         </span>
       </div>
 
       <div className="mt-auto space-y-3">
-        <div className="flex items-center justify-between text-sm">
-          <div className="flex items-center gap-1.5 text-gray-600">
-            <GitBranch className="w-4 h-4" />
-            <span className="truncate max-w-[120px]">{project.branch}</span>
+        <div className="flex items-center justify-between text-sm gap-2">
+          <div className="flex items-center gap-1.5 text-gray-600 min-w-0 flex-1">
+            <GitBranch className="w-4 h-4 shrink-0" />
+            <span className="truncate">{project.branch}</span>
           </div>
           {project.isDirty ? (
-            <div className="flex items-center gap-1 text-amber-600 text-xs font-medium" title="Uncommitted changes">
-              <AlertCircle className="w-3.5 h-3.5" />
+            <div className="flex items-center gap-1 text-amber-600 text-xs font-medium shrink-0" title="Uncommitted changes">
+              <AlertCircle className="w-3.5 h-3.5 shrink-0" />
               <span>Dirty</span>
             </div>
           ) : (
-            <div className="flex items-center gap-1 text-emerald-600 text-xs font-medium" title="Clean working tree">
-              <CheckCircle2 className="w-3.5 h-3.5" />
+            <div className="flex items-center gap-1 text-emerald-600 text-xs font-medium shrink-0" title="Clean working tree">
+              <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
               <span>Clean</span>
             </div>
           )}
