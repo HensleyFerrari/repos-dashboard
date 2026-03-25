@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { ProjectCard } from './components/ProjectCard';
 import { ProjectDetails } from './components/ProjectDetails';
-import { FolderSearch, Loader2, AlertCircle, FolderOpen } from 'lucide-react';
+import { FolderSearch, Loader2, AlertCircle, FolderOpen, Search } from 'lucide-react';
 
 interface Project {
   id: string;
@@ -21,6 +21,7 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
+  const [searchQuery, setSearchQuery] = useState('');
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
 
   // Load saved path on mount
@@ -85,9 +86,11 @@ export default function App() {
     { name: 'Other', count: projects.filter(p => p.stack === 'Other').length, icon: <div className="w-3 h-3 rounded-full bg-gray-400" /> },
   ];
 
-  const filteredProjects = activeCategory === 'All' 
-    ? projects 
-    : projects.filter(p => p.stack === activeCategory);
+  const filteredProjects = projects.filter(p => {
+    const matchesCategory = activeCategory === 'All' || p.stack === activeCategory;
+    const matchesSearch = p.name.toLowerCase().includes(searchQuery.trim().toLowerCase());
+    return matchesCategory && matchesSearch;
+  });
 
   return (
     <div className="flex h-screen bg-gray-50 font-sans overflow-hidden">
@@ -100,7 +103,20 @@ export default function App() {
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
         {/* Header */}
         <header className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between z-10 gap-4">
-          <h2 className="text-xl font-semibold text-gray-800 shrink-0">Dashboard</h2>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4 shrink-0 w-full sm:w-auto">
+            <h2 className="text-xl font-semibold text-gray-800 hidden lg:block">Dashboard</h2>
+            
+            <div className="relative w-full sm:w-64 lg:w-80">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search projects by name..."
+                className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all shadow-sm"
+              />
+            </div>
+          </div>
           
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto min-w-0">
             <button
@@ -165,7 +181,30 @@ export default function App() {
             </div>
           )}
 
-          {projects.length > 0 && (
+          {projects.length > 0 && filteredProjects.length === 0 && (
+            <div className="flex flex-col items-center justify-center h-full text-gray-500 space-y-4 py-12">
+              <div className="p-4 bg-gray-50 rounded-full border border-gray-100">
+                <Search className="w-8 h-8 text-gray-400" />
+              </div>
+              <div className="text-center px-4">
+                <h3 className="text-lg font-medium text-gray-900">No matching projects</h3>
+                <p className="text-sm mt-1 max-w-sm">
+                  We couldn't find any projects matching "{searchQuery}" in the {activeCategory} category.
+                </p>
+                <button
+                  onClick={() => {
+                    setSearchQuery('');
+                    setActiveCategory('All');
+                  }}
+                  className="mt-4 px-4 py-2 text-sm text-blue-600 hover:text-blue-700 font-medium bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
+                >
+                  Clear filters
+                </button>
+              </div>
+            </div>
+          )}
+
+          {projects.length > 0 && filteredProjects.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-6">
               {filteredProjects.map(project => (
                 <ProjectCard 
