@@ -7,24 +7,26 @@ import type { Project } from './types';
 
 // Helper to get folder size recursively
 async function getFolderSize(dirPath: string): Promise<number> {
-  let size = 0;
   try {
     const files = await fs.readdir(dirPath, { withFileTypes: true });
-    for (const file of files) {
+    const promises = files.map(async (file) => {
       const filePath = path.join(dirPath, file.name);
       if (file.isDirectory()) {
         if (file.name !== '.git') {
-          size += await getFolderSize(filePath);
+          return await getFolderSize(filePath);
         }
+        return 0;
       } else {
         const stats = await fs.stat(filePath);
-        size += stats.size;
+        return stats.size;
       }
-    }
+    });
+    const sizes = await Promise.all(promises);
+    return sizes.reduce((acc, curr) => acc + curr, 0);
   } catch (err) {
     // Ignore errors for unreadable files
+    return 0;
   }
-  return size;
 }
 
 // Format bytes
