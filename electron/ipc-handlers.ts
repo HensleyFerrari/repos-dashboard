@@ -23,8 +23,9 @@ async function getFolderSize(dirPath: string): Promise<number> {
     });
     const sizes = await Promise.all(promises);
     return sizes.reduce((acc, curr) => acc + curr, 0);
-  } catch (err) {
+  } catch (err: unknown) {
     // Ignore errors for unreadable files
+    console.debug(`Failed to read directory ${dirPath}: ${err instanceof Error ? err.message : String(err)}`);
     return 0;
   }
 }
