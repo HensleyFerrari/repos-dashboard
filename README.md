@@ -1,25 +1,33 @@
-# Local Projects Dashboard 🚀
+# Repos Dashboard 🚀
 
-A sleek, powerful dashboard to manage all your local development projects in one place. Automatically detect stacks, monitor Git status, and perform common management tasks with ease.
+A sleek and powerful desktop application built with Electron to manage all your local development projects in one place. Automatically detect stacks, monitor Git status, and perform common management tasks with a modern, intuitive UI.
 
 ## ✨ Features
 
-- 🔍 **Smart Scan:** Point to a root folder and instantly find all your projects.
-- 🛠️ **Stack Detection:** Automatically identifies Node.js, PHP, and Python projects.
-- 🌿 **Git Integration:** View current branches and "dirty" status (uncommitted changes) at a glance.
+- 🔍 **Smart Scan:** Select a root folder using native dialogs to instantly find all your projects.
+- 🛠️ **Stack Detection:** Automatically identifies **Node.js**, **PHP**, and **Python** projects.
+- 🌿 **Advanced Git Integration:** 
+  - View current branches and "dirty" status at a glance.
+  - **Git Sync:** Fetch, prune remotes, and automatically delete obsolete "gone" local branches to keep your workspace clean.
+- 📖 **Project Insights:**
+  - View the project's own `README.md` directly within the dashboard.
+  - List and run `package.json` scripts with real-time output.
 - 📦 **Project Management:** 
-  - List and run `package.json` scripts directly from the UI.
-  - Quick "Nuke" feature to clear `node_modules` and free up space.
-- 📊 **Resource Monitoring:** Real-time project size calculation (excluding `.git`).
-- 🎨 **Modern UI:** Built with React 19, Tailwind CSS, and Framer Motion for a smooth experience.
+  - **Quick "Nuke":** Clear `node_modules` to free up space and recalculate project size.
+  - **IDE Integration:** Open projects directly in your preferred editor (VS Code, Cursor, etc.).
+- 📊 **Resource Monitoring:** 
+  - Real-time project size calculation.
+  - Disk usage statistics for the scanned directory.
+- 🎨 **Modern UI:** Built with React 19, Tailwind CSS 4, and Framer Motion for a smooth, hardware-accelerated experience.
 
 ## 🚀 Tech Stack
 
-- **Frontend:** React 19, Vite, Tailwind CSS, Lucide Icons, Framer Motion.
-- **Backend:** Node.js (Express), `simple-git`, `tsx`.
-- **API:** Custom REST API for scanning and project operations.
+- **Framework:** Electron (Desktop App)
+- **Frontend:** React 19, Vite, Tailwind CSS 4, Lucide Icons, Framer Motion.
+- **Backend:** Node.js, `simple-git`.
+- **Packaging:** `electron-builder`.
 
-## 🛠️ Installation & Setup
+## 🛠️ Development Setup
 
 ### Prerequisites
 
@@ -37,38 +45,41 @@ cd repos-dashboard
 npm install
 ```
 
-### 2. Environment Configuration
-
-Create a `.env` file in the root directory (you can copy `.env.example`):
-
-```bash
-cp .env.example .env
-```
-
-*Note: While a `GEMINI_API_KEY` is present in the example, it is currently optional for the core dashboard functionality.*
-
-### 3. Start the Application
+### 2. Start in Development Mode
 
 ```bash
 npm run dev
 ```
 
-The app will be available at [http://localhost:3000](http://localhost:3000).
+This will start the Vite dev server and launch the Electron application window.
 
-## 📖 How to Use
+## 📦 Packaging for Production
 
-1. **Launch the dashboard** and enter the full path to your projects directory (e.g., `C:/Users/name/projects` or `/home/user/workspace`).
-2. **Click "Scan"** to find all repositories in that folder.
-3. **Filter** projects by stack using the sidebar.
-4. **Click on a project card** to view details, run scripts, or manage Git status.
-5. **Use the "Nuke" button** on Node.js projects to quickly delete `node_modules` if you need to save space.
+If you want to "install" the app on your machine without running it in development mode, you can package it into a standalone executable.
+
+### 1. Build and Package
+
+```bash
+# Generate the executable for your current OS
+npm run dist
+```
+
+### 2. Locate the Executable
+
+After the command finishes, look into the `release` folder:
+- **Windows:** Look for a `.exe` setup file (NSIS) or a portable version.
+- **macOS:** Look for a `.dmg` or `.app` file.
+- **Linux:** Look for an `AppImage` file.
+
+You can then run the installer or the standalone app as you would with any other desktop software.
 
 ## 📜 Available Scripts
 
-- `npm run dev`: Starts the server with `tsx` (enables Vite middleware).
-- `npm run build`: Builds the frontend for production.
-- `npm run start`: Starts the server in production mode.
-- `npm run lint`: Checks for TypeScript errors.
+- `npm run dev`: Starts the application in development mode with hot-reloading.
+- `npm run build`: Compiles the frontend and Electron main process code.
+- `npm run dist`: Builds and packages the app into a production-ready executable using `electron-builder`.
+- `npm run lint`: Checks for TypeScript errors across the project.
+- `npm run clean`: Removes all build and release artifacts.
 
 ---
-Built with ❤️ for developers.
+Built with ❤️ for developers who love clean workspaces.
