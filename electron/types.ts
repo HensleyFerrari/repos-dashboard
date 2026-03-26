@@ -51,6 +51,12 @@ export interface OpenIdeResult {
   error: string | null;
 }
 
+export interface DiskStatsResult {
+  folderSizeBytes: number;
+  diskTotalBytes: number;
+  diskFreeBytes: number;
+}
+
 export interface ElectronAPI {
   scanDirectory: (rootPath: string) => Promise<ScanResult>;
   getProjectDetails: (projectPath: string) => Promise<ProjectDetailsResult>;
@@ -60,4 +66,5 @@ export interface ElectronAPI {
   gitSync: (projectPath: string) => Promise<GitSyncResult>;
   openInIde: (projectPath: string, ideCommand: string) => Promise<OpenIdeResult>;
   selectDirectory: () => Promise<string | null>;
+  getDiskStats: (rootPath: string) => Promise<DiskStatsResult>;
 }

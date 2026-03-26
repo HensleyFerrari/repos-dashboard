@@ -25,6 +25,9 @@ const electronAPI: ElectronAPI = {
 
   selectDirectory: () =>
     ipcRenderer.invoke('select-directory'),
+
+  getDiskStats: (rootPath: string) =>
+    ipcRenderer.invoke('get-disk-stats', rootPath),
 };
 
 contextBridge.exposeInMainWorld('electronAPI', electronAPI);

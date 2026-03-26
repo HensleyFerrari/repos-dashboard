@@ -341,4 +341,29 @@ export function registerIpcHandlers() {
       });
     });
   });
+
+  // Get disk and folder stats
+  ipcMain.handle('get-disk-stats', async (_event, rootPath: string) => {
+    if (!rootPath) {
+      throw new Error('rootPath is required');
+    }
+
+    try {
+      const normalizedPath = normalizePath(rootPath);
+      const folderSizeBytes = await getFolderSize(normalizedPath);
+      
+      const st = await fs.statfs(normalizedPath);
+      const diskTotalBytes = st.bsize * st.blocks;
+      const diskFreeBytes = st.bsize * st.bavail;
+
+      return {
+        folderSizeBytes,
+        diskTotalBytes,
+        diskFreeBytes
+      };
+    } catch (error: any) {
+      console.error(`Error getting disk stats for ${rootPath}:`, error);
+      throw new Error(error.message || 'Failed to get disk stats');
+    }
+  });
 }
