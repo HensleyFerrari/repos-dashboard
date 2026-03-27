@@ -23,7 +23,7 @@ async function getFolderSize(dirPath: string): Promise<number> {
     });
     const sizes = await Promise.all(promises);
     return sizes.reduce((acc, curr) => acc + curr, 0);
-  } catch (err) {
+  } catch (err: unknown) {
     // Ignore errors for unreadable files
     return 0;
   }
@@ -107,7 +107,7 @@ export function registerIpcHandlers() {
                   branch = status.current || 'N/A';
                   isDirty = !status.isClean();
                 }
-              } catch (e) {
+              } catch (e: unknown) {
                 // Ignore git errors
               }
 
@@ -138,15 +138,15 @@ export function registerIpcHandlers() {
             }
           }
           await Promise.all(promises);
-        } catch (e) {
+        } catch (e: unknown) {
           // Ignore unreadable directories
         }
       }
 
       await scanDirectory(resolvedPath);
       return { projects };
-    } catch (error: any) {
-      return { projects: [], error: error.message };
+    } catch (error: unknown) {
+      return { projects: [], error: error instanceof Error ? error.message : String(error) };
     }
   });
 
@@ -164,24 +164,20 @@ export function registerIpcHandlers() {
     let readmeContent: string | null = null;
 
     // Read README.md
-    try {
-      const readmeFiles = [
-        'README.md', 'readme.md', 'README.MD', 'Readme.md',
-        'README.markdown', 'readme.markdown',
-        'README.txt', 'readme.txt',
-        'README', 'readme'
-      ];
-      for (const file of readmeFiles) {
-        try {
-          const readmePath = path.join(normalizedPath, file);
-          readmeContent = await fs.readFile(readmePath, 'utf-8');
-          break;
-        } catch (e) {
-          // Not found, try next
-        }
+    const readmeFiles = [
+      'README.md', 'readme.md', 'README.MD', 'Readme.md',
+      'README.markdown', 'readme.markdown',
+      'README.txt', 'readme.txt',
+      'README', 'readme'
+    ];
+    for (const file of readmeFiles) {
+      try {
+        const readmePath = path.join(normalizedPath, file);
+        readmeContent = await fs.readFile(readmePath, 'utf-8');
+        break;
+      } catch (e: unknown) {
+        // Not found, try next
       }
-    } catch (e) {
-      console.error(`Error reading README for ${normalizedPath}:`, e);
     }
 
     // Read package.json for scripts
@@ -190,10 +186,10 @@ export function registerIpcHandlers() {
       const pkgData = await fs.readFile(pkgJsonPath, 'utf-8');
       const pkg = JSON.parse(pkgData);
       scripts = pkg.scripts || {};
-    } catch (e) {
+    } catch (e: unknown) {
       // Only log if it's not a "file not found" error, as some projects might not have package.json
-      if ((e as any).code !== 'ENOENT') {
-        console.error(`Error reading package.json for ${normalizedPath}:`, e);
+      if (e instanceof Error && (e as any).code !== 'ENOENT') {
+        console.error(`Error reading package.json for ${normalizedPath}:`, e.message);
       }
     }
 
@@ -211,8 +207,8 @@ export function registerIpcHandlers() {
         localBranches = allBranches.filter(b => !b.startsWith('remotes/'));
         remoteBranches = allBranches.filter(b => b.startsWith('remotes/'));
       }
-    } catch (e) {
-      console.error(`Error reading Git status for ${normalizedPath}:`, e);
+    } catch (e: unknown) {
+      console.error(`Error reading Git status for ${normalizedPath}:`, e instanceof Error ? e.message : String(e));
     }
 
     return { scripts, gitStatus, localBranches, remoteBranches, readmeContent };
@@ -311,8 +307,8 @@ export function registerIpcHandlers() {
           await git.deleteLocalBranch(branch, true);
           deletedBranches.push(branch);
           logs.push(`Deleted branch: ${branch}`);
-        } catch (e: any) {
-          logs.push(`Failed to delete branch ${branch}: ${e.message}`);
+        } catch (e: unknown) {
+          logs.push(`Failed to delete branch ${branch}: ${e instanceof Error ? e.message : String(e)}`);
         }
       }
     } else {
@@ -363,9 +359,9 @@ export function registerIpcHandlers() {
         diskTotalBytes,
         diskFreeBytes
       };
-    } catch (error: any) {
-      console.error(`Error getting disk stats for ${rootPath}:`, error);
-      throw new Error(error.message || 'Failed to get disk stats');
+    } catch (error: unknown) {
+      console.error(`Error getting disk stats for ${rootPath}:`, error instanceof Error ? error.message : String(error));
+      throw new Error(error instanceof Error ? error.message : 'Failed to get disk stats');
     }
   });
 }
