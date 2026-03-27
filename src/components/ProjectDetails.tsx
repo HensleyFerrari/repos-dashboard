@@ -191,6 +191,33 @@ export function ProjectDetails({ project, onClose, onProjectUpdate }: ProjectDet
     }
   };
 
+  const installDependencies = async (manager: 'npm' | 'yarn') => {
+    setActiveTab('logs');
+    setIsRunning(true);
+    const command = `${manager} install`;
+    setLogs((prev) => prev + `\n$ ${command}\n`);
+    
+    try {
+      const data = await window.electronAPI.runCommand(project.path, command);
+      
+      if (data.error) {
+        setLogs((prev) => prev + `Error: ${data.error}\n`);
+      } else {
+        if (data.stdout) setLogs((prev) => prev + `${data.stdout}\n`);
+        if (data.stderr) setLogs((prev) => prev + `${data.stderr}\n`);
+        
+        const openNow = window.confirm(`Instalação com ${manager} finalizada com sucesso!\nDeseja abrir o projeto no VS Code?`);
+        if (openNow) {
+          openIde('code');
+        }
+      }
+    } catch (e: any) {
+      setLogs((prev) => prev + `Failed to execute: ${e.message}\n`);
+    } finally {
+      setIsRunning(false);
+    }
+  };
+
   return (
     <div 
       className="fixed inset-y-0 right-0 bg-white shadow-2xl border-l border-gray-200 flex flex-col z-50 transform transition-transform duration-300"
@@ -331,6 +358,28 @@ export function ProjectDetails({ project, onClose, onProjectUpdate }: ProjectDet
                   ) : (
                     <p className="text-sm text-gray-500 italic">No scripts found in package.json.</p>
                   )}
+                </div>
+
+                <div className="pt-4 border-t border-gray-100">
+                  <h3 className="text-sm font-semibold text-gray-900 mb-3 uppercase tracking-wider">Installation</h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      onClick={() => installDependencies('npm')}
+                      disabled={isRunning || project.stack !== 'Node.js'}
+                      className="flex items-center justify-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-600 border border-emerald-200 rounded-lg hover:bg-emerald-100 transition-colors disabled:opacity-50"
+                    >
+                      <Terminal className="w-4 h-4" />
+                      <span className="font-medium text-sm">npm install</span>
+                    </button>
+                    <button
+                      onClick={() => installDependencies('yarn')}
+                      disabled={isRunning || project.stack !== 'Node.js'}
+                      className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors disabled:opacity-50"
+                    >
+                      <Terminal className="w-4 h-4" />
+                      <span className="font-medium text-sm">yarn install</span>
+                    </button>
+                  </div>
                 </div>
 
                 <div className="pt-4 border-t border-gray-100">
