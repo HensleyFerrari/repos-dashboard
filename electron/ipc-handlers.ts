@@ -63,8 +63,8 @@ export function registerIpcHandlers() {
                   branch = status.current || 'N/A';
                   isDirty = !status.isClean();
                 }
-              } catch (e) {
-                // Ignore git errors
+              } catch (e: unknown) {
+                console.warn(`Error reading Git status for ${dirPath}:`, e instanceof Error ? e.message : String(e));
               }
 
               const sizeBytes = await getFolderSize(dirPath);
@@ -94,15 +94,15 @@ export function registerIpcHandlers() {
             }
           }
           await Promise.all(promises);
-        } catch (e) {
+        } catch (e: unknown) {
           // Ignore unreadable directories
         }
       }
 
       await scanDirectory(resolvedPath);
       return { projects };
-    } catch (error: any) {
-      return { projects: [], error: error.message };
+    } catch (error: unknown) {
+      return { projects: [], error: error instanceof Error ? error.message : String(error) };
     }
   });
 
@@ -137,7 +137,7 @@ export function registerIpcHandlers() {
         const readmePath = path.join(normalizedPath, readmeFiles[existingIndex]);
         readmeContent = await fs.readFile(readmePath, 'utf-8');
       }
-    } catch (e) {
+    } catch (e: unknown) {
       console.error(`Error reading README for ${normalizedPath}:`, e);
     }
 
@@ -147,9 +147,9 @@ export function registerIpcHandlers() {
       const pkgData = await fs.readFile(pkgJsonPath, 'utf-8');
       const pkg = JSON.parse(pkgData);
       scripts = pkg.scripts || {};
-    } catch (e) {
+    } catch (e: unknown) {
       // Only log if it's not a "file not found" error, as some projects might not have package.json
-      if ((e as any).code !== 'ENOENT') {
+      if (!(typeof e === 'object' && e !== null && (e as any).code === 'ENOENT')) {
         console.error(`Error reading package.json for ${normalizedPath}:`, e);
       }
     }
@@ -168,7 +168,7 @@ export function registerIpcHandlers() {
         localBranches = allBranches.filter(b => !b.startsWith('remotes/'));
         remoteBranches = allBranches.filter(b => b.startsWith('remotes/'));
       }
-    } catch (e) {
+    } catch (e: unknown) {
       console.error(`Error reading Git status for ${normalizedPath}:`, e);
     }
 
@@ -268,8 +268,8 @@ export function registerIpcHandlers() {
           await git.deleteLocalBranch(branch, true);
           deletedBranches.push(branch);
           logs.push(`Deleted branch: ${branch}`);
-        } catch (e: any) {
-          logs.push(`Failed to delete branch ${branch}: ${e.message}`);
+        } catch (e: unknown) {
+          logs.push(`Failed to delete branch ${branch}: ${e instanceof Error ? e.message : String(e)}`);
         }
       }
     } else {
@@ -320,9 +320,9 @@ export function registerIpcHandlers() {
         diskTotalBytes,
         diskFreeBytes
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(`Error getting disk stats for ${rootPath}:`, error);
-      throw new Error(error.message || 'Failed to get disk stats');
+      throw new Error(error instanceof Error ? error.message : String(error) || 'Failed to get disk stats');
     }
   });
 }
