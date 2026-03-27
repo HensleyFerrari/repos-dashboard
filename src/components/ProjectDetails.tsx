@@ -82,13 +82,14 @@ export function ProjectDetails({ project, onClose, onProjectUpdate }: ProjectDet
     }
   };
 
-  const runCommand = async (command: string) => {
+  const runCommand = async (command: string, args: string[] = []) => {
     setActiveTab('logs');
     setIsRunning(true);
-    setLogs((prev) => prev + `\n$ ${command}\n`);
+    const fullCommand = [command, ...args].join(' ');
+    setLogs((prev) => prev + `\n$ ${fullCommand}\n`);
     
     try {
-      const data = await window.electronAPI.runCommand(project.path, command);
+      const data = await window.electronAPI.runCommand(project.path, command, args);
       
       if (data.error) {
         setLogs((prev) => prev + `Error: ${data.error}\n`);
@@ -98,7 +99,7 @@ export function ProjectDetails({ project, onClose, onProjectUpdate }: ProjectDet
       }
 
       // Refresh if it was a git command
-      if (command.startsWith('git ')) {
+      if (command === 'git') {
         await fetchDetails();
       }
     } catch (e: any) {
@@ -317,7 +318,7 @@ export function ProjectDetails({ project, onClose, onProjectUpdate }: ProjectDet
                             <div className="text-xs text-gray-500 truncate font-mono">{cmd}</div>
                           </div>
                           <button
-                            onClick={() => runCommand(`npm run ${name}`)}
+                            onClick={() => runCommand('npm', ['run', name])}
                             disabled={isRunning}
                             className="p-2 bg-blue-100 text-blue-600 rounded-md hover:bg-blue-200 transition-colors disabled:opacity-50 flex-shrink-0"
                             title={`Run ${name}`}
@@ -387,7 +388,7 @@ export function ProjectDetails({ project, onClose, onProjectUpdate }: ProjectDet
                   <h3 className="text-sm font-semibold text-gray-900 mb-3 uppercase tracking-wider">Actions</h3>
                   <div className="grid grid-cols-2 gap-2">
                     <button
-                      onClick={() => runCommand('git pull')}
+                      onClick={() => runCommand('git', ['pull'])}
                       disabled={isRunning}
                       className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors disabled:opacity-50"
                     >

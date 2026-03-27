@@ -2,7 +2,7 @@ import { ipcMain, dialog, BrowserWindow } from 'electron';
 import fs from 'fs/promises';
 import path from 'path';
 import { simpleGit } from 'simple-git';
-import { exec } from 'child_process';
+import { spawn } from 'child_process';
 import type { Project } from './types';
 
 // Helper to get folder size recursively
@@ -219,18 +219,43 @@ export function registerIpcHandlers() {
   });
 
   // Run command in project directory
-  ipcMain.handle('project-run', async (_event, projectPath: string, command: string) => {
+  ipcMain.handle('project-run', async (_event, projectPath: string, command: string, args: string[]) => {
     if (!projectPath || !command) {
       throw new Error('projectPath and command are required');
     }
 
     const normalizedPath = normalizePath(projectPath);
     return new Promise((resolve) => {
-      exec(command, { cwd: normalizedPath }, (error, stdout, stderr) => {
+      // Use spawn to separate the command from its arguments, preventing command injection
+      const child = spawn(command, args || [], {
+        cwd: normalizedPath,
+        shell: false
+      });
+
+      let stdout = '';
+      let stderr = '';
+
+      child.stdout?.on('data', (data) => {
+        stdout += data.toString();
+      });
+
+      child.stderr?.on('data', (data) => {
+        stderr += data.toString();
+      });
+
+      child.on('error', (error) => {
         resolve({
           stdout,
           stderr,
-          error: error ? error.message : null,
+          error: error.message,
+        });
+      });
+
+      child.on('close', (code) => {
+        resolve({
+          stdout,
+          stderr,
+          error: code === 0 ? null : `Process exited with code ${code}`,
         });
       });
     });
@@ -334,11 +359,20 @@ export function registerIpcHandlers() {
 
     const normalizedPath = normalizePath(projectPath);
     return new Promise((resolve) => {
-      // Use exec to spawn the IDE command with the path
-      exec(`${ideCommand} "${normalizedPath}"`, (error) => {
+      // Use spawn to separate the IDE command from its arguments, preventing command injection
+      const child = spawn(ideCommand, [normalizedPath], { shell: false });
+
+      child.on('error', (error) => {
         resolve({
-          success: !error,
-          error: error ? error.message : null,
+          success: false,
+          error: error.message,
+        });
+      });
+
+      child.on('close', (code) => {
+        resolve({
+          success: code === 0,
+          error: code === 0 ? null : `Process exited with code ${code}`,
         });
       });
     });

@@ -8,8 +8,8 @@ const electronAPI: ElectronAPI = {
   getProjectDetails: (projectPath: string) =>
     ipcRenderer.invoke('project-details', projectPath),
 
-  runCommand: (projectPath: string, command: string) =>
-    ipcRenderer.invoke('project-run', projectPath, command),
+  runCommand: (projectPath: string, command: string, args: string[]) =>
+    ipcRenderer.invoke('project-run', projectPath, command, args),
 
   nukeNodeModules: (projectPath: string) =>
     ipcRenderer.invoke('project-nuke', projectPath),

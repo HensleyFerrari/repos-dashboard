@@ -60,7 +60,7 @@ export interface DiskStatsResult {
 export interface ElectronAPI {
   scanDirectory: (rootPath: string) => Promise<ScanResult>;
   getProjectDetails: (projectPath: string) => Promise<ProjectDetailsResult>;
-  runCommand: (projectPath: string, command: string) => Promise<RunResult>;
+  runCommand: (projectPath: string, command: string, args: string[]) => Promise<RunResult>;
   nukeNodeModules: (projectPath: string) => Promise<NukeResult>;
   refreshSize: (projectPath: string) => Promise<SizeResult>;
   gitSync: (projectPath: string) => Promise<GitSyncResult>;
