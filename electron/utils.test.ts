@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert';
 import { mock } from 'node:test';
 import fs from 'node:fs/promises';
-import { getFolderSize } from './utils.ts';
+import { getFolderSize } from './utils';
 
 test('getFolderSize returns sum of file sizes', async () => {
   const readdirMock = mock.method(fs, 'readdir', async () => {
@@ -67,4 +67,24 @@ test('getFolderSize ignores .git directory', async () => {
 
     readdirMock.mock.restore();
     statMock.mock.restore();
+});
+
+test('getFolderSize ignores node_modules directory', async () => {
+  const readdirMock = mock.method(fs, 'readdir', async () => {
+    return [
+      { name: 'node_modules', isDirectory: () => true },
+      { name: 'file1.txt', isDirectory: () => false },
+    ];
   });
+
+  const statMock = mock.method(fs, 'stat', async () => {
+    return { size: 100 };
+  });
+
+  const size = await getFolderSize('/fake/repo');
+
+  assert.strictEqual(size, 100);
+
+  readdirMock.mock.restore();
+  statMock.mock.restore();
+});

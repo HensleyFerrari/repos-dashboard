@@ -127,14 +127,15 @@ export function registerIpcHandlers() {
         'README.txt', 'readme.txt',
         'README', 'readme'
       ];
-      for (const file of readmeFiles) {
-        try {
-          const readmePath = path.join(normalizedPath, file);
-          readmeContent = await fs.readFile(readmePath, 'utf-8');
-          break;
-        } catch (e: unknown) {
-          // Not found, try next
-        }
+
+      const statResults = await Promise.allSettled(
+        readmeFiles.map(file => fs.stat(path.join(normalizedPath, file)))
+      );
+
+      const existingIndex = statResults.findIndex(r => r.status === 'fulfilled');
+      if (existingIndex !== -1) {
+        const readmePath = path.join(normalizedPath, readmeFiles[existingIndex]);
+        readmeContent = await fs.readFile(readmePath, 'utf-8');
       }
     } catch (e: unknown) {
       console.error(`Error reading README for ${normalizedPath}:`, e);
