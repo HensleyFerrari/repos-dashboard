@@ -29,9 +29,9 @@ const CustomTooltip = ({ active, payload }: any) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
     return (
-      <div className="bg-white p-3 border border-gray-100 shadow-lg rounded-lg">
-        <p className="font-medium text-gray-900">{data.name}</p>
-        <p className="text-sm text-gray-500">{formatBytes(data.value)}</p>
+      <div className="bg-white dark:bg-gray-800 p-3 border border-gray-100 dark:border-gray-700 shadow-lg rounded-lg">
+        <p className="font-medium text-gray-900 dark:text-gray-100">{data.name}</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400">{formatBytes(data.value)}</p>
       </div>
     );
   }
@@ -121,22 +121,22 @@ export function ChartsModal({ isOpen, onClose, projects, rootPath }: ChartsModal
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
       <div 
-        className="bg-white rounded-xl shadow-xl w-full max-w-5xl flex flex-col overflow-hidden max-h-[90vh]"
+        className="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-5xl flex flex-col overflow-hidden max-h-[90vh] border border-transparent dark:border-gray-800"
         onClick={e => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between p-6 border-b border-gray-100">
+        <div className="flex items-center justify-between p-6 border-b border-gray-100 dark:border-gray-800">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
+            <div className="p-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg">
               <PieChartIcon className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-xl font-semibold text-gray-900">Análise de Espaço</h2>
-              <p className="text-sm text-gray-500 truncate max-w-md">{rootPath}</p>
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Análise de Espaço</h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400 truncate max-w-md">{rootPath}</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -145,21 +145,21 @@ export function ChartsModal({ isOpen, onClose, projects, rootPath }: ChartsModal
         <div className="p-6 overflow-y-auto">
           {loading ? (
             <div className="flex flex-col items-center justify-center py-20">
-              <Loader2 className="w-10 h-10 text-blue-500 animate-spin mb-4" />
-              <p className="text-gray-500 font-medium">Calculando estatísticas do disco...</p>
-              <p className="text-sm text-gray-400 mt-1">Isso pode levar alguns segundos dependendo do tamanho da pasta.</p>
+              <Loader2 className="w-10 h-10 text-blue-500 dark:text-blue-400 animate-spin mb-4" />
+              <p className="text-gray-500 dark:text-gray-400 font-medium">Calculando estatísticas do disco...</p>
+              <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">Isso pode levar alguns segundos dependendo do tamanho da pasta.</p>
             </div>
           ) : !diskStats ? (
-            <div className="flex flex-col items-center justify-center py-20 text-gray-500">
+            <div className="flex flex-col items-center justify-center py-20 text-gray-500 dark:text-gray-400">
               <p>Falha ao carregar as estatísticas do disco.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               {/* Chart 1 */}
-              <div className="bg-gray-50 rounded-xl p-6 border border-gray-100 flex flex-col">
+              <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-6 border border-gray-100 dark:border-gray-800 flex flex-col">
                 <div className="flex items-center gap-2 mb-6">
-                  <Folder className="w-5 h-5 text-indigo-500" />
-                  <h3 className="font-semibold text-gray-900">Uso da Pasta Selecionada</h3>
+                  <Folder className="w-5 h-5 text-indigo-500 dark:text-indigo-400" />
+                  <h3 className="font-semibold text-gray-900 dark:text-gray-100">Uso da Pasta Selecionada</h3>
                 </div>
                 <div className="flex-1 min-h-[300px]">
                   <ResponsiveContainer width="100%" height="100%">
@@ -172,6 +172,7 @@ export function ChartsModal({ isOpen, onClose, projects, rootPath }: ChartsModal
                         outerRadius={100}
                         paddingAngle={2}
                         dataKey="value"
+                        stroke="none"
                       >
                         {projectsData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -182,17 +183,17 @@ export function ChartsModal({ isOpen, onClose, projects, rootPath }: ChartsModal
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
-                <div className="mt-4 pt-4 border-t border-gray-200 text-center">
-                  <span className="text-sm text-gray-500">Total da Pasta: </span>
-                  <span className="text-sm font-semibold text-gray-900">{formatBytes(diskStats.folderSizeBytes)}</span>
+                <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 text-center">
+                  <span className="text-sm text-gray-500 dark:text-gray-400">Total da Pasta: </span>
+                  <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{formatBytes(diskStats.folderSizeBytes)}</span>
                 </div>
               </div>
 
               {/* Chart 2 */}
-              <div className="bg-gray-50 rounded-xl p-6 border border-gray-100 flex flex-col">
+              <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-6 border border-gray-100 dark:border-gray-800 flex flex-col">
                 <div className="flex items-center gap-2 mb-6">
-                  <HardDrive className="w-5 h-5 text-indigo-500" />
-                  <h3 className="font-semibold text-gray-900">Uso do Disco</h3>
+                  <HardDrive className="w-5 h-5 text-indigo-500 dark:text-indigo-400" />
+                  <h3 className="font-semibold text-gray-900 dark:text-gray-100">Uso do Disco</h3>
                 </div>
                 <div className="flex-1 min-h-[300px]">
                   <ResponsiveContainer width="100%" height="100%">
@@ -205,9 +206,10 @@ export function ChartsModal({ isOpen, onClose, projects, rootPath }: ChartsModal
                         outerRadius={100}
                         paddingAngle={2}
                         dataKey="value"
+                        stroke="none"
                       >
                         {diskData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={['#3b82f6', '#cbd5e1', '#22c55e'][index % 3]} />
+                          <Cell key={`cell-${index}`} fill={['#3b82f6', '#cbd5e1', '#22c55e'][index % 3]} opacity={index === 1 && document.documentElement.classList.contains('dark') ? 0.3 : 1} />
                         ))}
                       </Pie>
                       <Tooltip content={<CustomTooltip />} />
@@ -215,9 +217,9 @@ export function ChartsModal({ isOpen, onClose, projects, rootPath }: ChartsModal
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
-                <div className="mt-4 pt-4 border-t border-gray-200 text-center">
-                  <span className="text-sm text-gray-500">Total do Disco: </span>
-                  <span className="text-sm font-semibold text-gray-900">{formatBytes(diskStats.diskTotalBytes)}</span>
+                <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 text-center">
+                  <span className="text-sm text-gray-500 dark:text-gray-400">Total do Disco: </span>
+                  <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{formatBytes(diskStats.diskTotalBytes)}</span>
                 </div>
               </div>
             </div>
