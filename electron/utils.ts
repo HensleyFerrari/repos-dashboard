@@ -8,7 +8,7 @@ export async function getFolderSize(dirPath: string): Promise<number> {
     const promises = files.map(async (file) => {
       const filePath = path.join(dirPath, file.name);
       if (file.isDirectory()) {
-        if (file.name !== '.git') {
+        if (file.name !== '.git' && file.name !== 'node_modules') {
           return await getFolderSize(filePath);
         }
         return 0;
