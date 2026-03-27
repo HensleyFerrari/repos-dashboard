@@ -1,5 +1,5 @@
 import React from 'react';
-import { Folder, GitBranch, HardDrive, AlertCircle, CheckCircle2, Code2, Globe, Shield, CloudOff, Terminal } from 'lucide-react';
+import { Folder, GitBranch, HardDrive, AlertCircle, CheckCircle2, Code2, Globe, Shield, CloudOff, Terminal, TerminalSquare, Sparkles } from 'lucide-react';
 
 interface Project {
   id: string;
@@ -15,9 +15,10 @@ interface Project {
 interface ProjectCardProps {
   project: Project;
   onClick: () => void;
+  defaultIde: string;
 }
 
-export function ProjectCard({ project, onClick }: ProjectCardProps) {
+export function ProjectCard({ project, onClick, defaultIde }: ProjectCardProps) {
   const getStackColor = (stack: string) => {
     switch (stack) {
       case 'Node.js': return 'bg-green-100 text-green-800 border-green-200';
@@ -30,9 +31,25 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
   const handleOpenIde = async (e: React.MouseEvent) => {
     e.stopPropagation();
     try {
-      await window.electronAPI.openInIde(project.path, 'code');
+      await window.electronAPI.openInIde(project.path, defaultIde);
     } catch (err) {
       console.error('Failed to open IDE from card:', err);
+    }
+  };
+
+  const getIdeIcon = () => {
+    switch (defaultIde) {
+      case 'cursor': return <TerminalSquare className="w-4 h-4" />;
+      case 'antigravity': return <Sparkles className="w-4 h-4" />;
+      default: return <Code2 className="w-4 h-4" />;
+    }
+  };
+
+  const getIdeName = () => {
+    switch (defaultIde) {
+      case 'cursor': return 'Cursor';
+      case 'antigravity': return 'Antigravity';
+      default: return 'VS Code';
     }
   };
 
@@ -60,9 +77,9 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
           <button
             onClick={handleOpenIde}
             className="opacity-0 group-hover:opacity-100 p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-all"
-            title="Quick Open in VS Code"
+            title={`Quick Open in ${getIdeName()}`}
           >
-            <Code2 className="w-4 h-4" />
+            {getIdeIcon()}
           </button>
           <span className={`text-xs px-2.5 py-1 rounded-full border font-medium whitespace-nowrap ${getStackColor(project.stack)}`}>
             {project.stack}

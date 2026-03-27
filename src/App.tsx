@@ -26,6 +26,7 @@ export default function App() {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isChartsOpen, setIsChartsOpen] = useState(false);
+  const [defaultIde, setDefaultIde] = useState(() => localStorage.getItem('projectDashDefaultIde') || 'code');
   const version = '0.1.1';
 
   // Load saved path on mount
@@ -36,6 +37,11 @@ export default function App() {
       scanDirectory(savedPath);
     }
   }, []);
+
+  // Save selected IDE whenever it changes
+  useEffect(() => {
+    localStorage.setItem('projectDashDefaultIde', defaultIde);
+  }, [defaultIde]);
 
   const scanDirectory = async (path: string) => {
     if (!path.trim()) return;
@@ -221,6 +227,7 @@ export default function App() {
                   key={project.id} 
                   project={project} 
                   onClick={() => setSelectedProject(project)} 
+                  defaultIde={defaultIde}
                 />
               ))}
             </div>
@@ -265,6 +272,8 @@ export default function App() {
         <SettingsModal 
           isOpen={isSettingsOpen} 
           onClose={() => setIsSettingsOpen(false)} 
+          defaultIde={defaultIde}
+          setDefaultIde={setDefaultIde}
         />
       </main>
     </div>

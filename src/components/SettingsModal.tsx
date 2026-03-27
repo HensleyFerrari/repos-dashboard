@@ -4,9 +4,11 @@ import { X, Moon, Monitor, Code2, FolderGit2 } from 'lucide-react';
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
+  defaultIde: string;
+  setDefaultIde: (ide: string) => void;
 }
 
-export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
+export function SettingsModal({ isOpen, onClose, defaultIde, setDefaultIde }: SettingsModalProps) {
   if (!isOpen) return null;
 
   return (
@@ -46,13 +48,14 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               <Code2 className="w-4 h-4" /> Default IDE
             </h3>
             <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 relative overflow-hidden group">
-              <div className="absolute inset-0 bg-gray-100/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-[1px] z-10">
-                <span className="bg-gray-900 text-white text-xs font-medium px-2.5 py-1 rounded-full shadow-sm">Coming Soon</span>
-              </div>
-              <select disabled className="mt-1 block w-full pl-3 pr-10 py-2 text-sm border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded-lg opacity-60 bg-white shadow-sm border">
-                <option>VS Code</option>
-                <option>Cursor</option>
-                <option>Antigravity</option>
+              <select 
+                value={defaultIde} 
+                onChange={(e) => setDefaultIde(e.target.value)}
+                className="mt-1 block w-full pl-3 pr-10 py-2 text-sm border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded-lg bg-white shadow-sm border"
+              >
+                <option value="code">VS Code</option>
+                <option value="cursor">Cursor</option>
+                <option value="antigravity">Antigravity</option>
               </select>
               <p className="text-xs text-gray-500 mt-2 opacity-80">Choose which IDE to use for the quick action button on the dashboard.</p>
             </div>
