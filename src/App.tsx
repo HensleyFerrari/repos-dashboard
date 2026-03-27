@@ -82,9 +82,9 @@ export default function App() {
     }
   };
 
-  const filteredProjects = projects.filter(p => {
-    return p.name.toLowerCase().includes(searchQuery.trim().toLowerCase());
-  });
+  const filteredProjects = projects
+    .filter(p => p.name.toLowerCase().includes(searchQuery.trim().toLowerCase()))
+    .sort((a, b) => a.name.localeCompare(b.name));
 
   return (
     <div className="flex h-screen bg-gray-50 font-sans overflow-hidden">
