@@ -125,9 +125,9 @@ export default function App() {
 
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 font-sans overflow-hidden transition-colors duration-200">
-      <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
+      <main className="flex-1 flex flex-col min-w-0 overflow-y-auto relative">
         {/* Header */}
-        <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-4 sm:px-6 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between z-10 gap-4 shadow-sm transition-colors duration-200">
+        <header className="sticky top-0 z-30 bg-white/75 dark:bg-gray-900/75 backdrop-blur-md border-b border-gray-200/50 dark:border-gray-800/50 px-4 sm:px-6 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm transition-colors duration-200">
           <div className="flex flex-col sm:flex-row sm:items-center gap-6 shrink-0 w-full sm:w-auto">
             {/* App Logo */}
             <div className="flex items-center gap-2.5">
@@ -199,7 +199,7 @@ export default function App() {
         </header>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+        <div className="flex-1 p-4 sm:p-6">
           {error && (
             <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg flex items-start gap-3 text-red-700 dark:text-red-400">
               <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
