@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert';
 import { mock } from 'node:test';
 import fs from 'node:fs/promises';
-import { getFolderSize } from './utils.ts';
+import { getFolderSize } from './utils';
 
 test('getFolderSize returns sum of file sizes', async () => {
   const readdirMock = mock.method(fs, 'readdir', async () => {

@@ -75,19 +75,21 @@ export function ChartsModal({ isOpen, onClose, projects, rootPath }: ChartsModal
     
     const chartData = [];
     
-    // Top 7 projects
-    const topProjects = sortedProjects.slice(0, 7);
-    topProjects.forEach(p => {
-      chartData.push({ name: p.name, value: p.sizeBytes });
-      totalProjectsSize += p.sizeBytes;
-    });
+    let otherProjSize = 0;
 
-    // Other projects
-    const otherProjects = sortedProjects.slice(7);
-    if (otherProjects.length > 0) {
-      const otherProjSize = otherProjects.reduce((sum, p) => sum + p.sizeBytes, 0);
+    for (let i = 0; i < sortedProjects.length; i++) {
+      const p = sortedProjects[i];
+      totalProjectsSize += p.sizeBytes;
+
+      if (i < 7) {
+        chartData.push({ name: p.name, value: p.sizeBytes });
+      } else {
+        otherProjSize += p.sizeBytes;
+      }
+    }
+
+    if (otherProjSize > 0) {
       chartData.push({ name: 'Outros Projetos', value: otherProjSize });
-      totalProjectsSize += otherProjSize;
     }
 
     // Remaining folder space (files that are not identified as projects)
