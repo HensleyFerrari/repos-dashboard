@@ -67,4 +67,24 @@ test('getFolderSize ignores .git directory', async () => {
 
     readdirMock.mock.restore();
     statMock.mock.restore();
+});
+
+test('getFolderSize ignores node_modules directory', async () => {
+  const readdirMock = mock.method(fs, 'readdir', async () => {
+    return [
+      { name: 'node_modules', isDirectory: () => true },
+      { name: 'file1.txt', isDirectory: () => false },
+    ];
   });
+
+  const statMock = mock.method(fs, 'stat', async () => {
+    return { size: 100 };
+  });
+
+  const size = await getFolderSize('/fake/repo');
+
+  assert.strictEqual(size, 100);
+
+  readdirMock.mock.restore();
+  statMock.mock.restore();
+});
