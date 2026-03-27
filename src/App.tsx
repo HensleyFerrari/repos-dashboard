@@ -14,6 +14,7 @@ interface Project {
   isDirty: boolean;
   size: string;
   sizeBytes: number;
+  protocol?: 'https' | 'ssh' | 'local' | 'none';
 }
 
 export default function App() {
@@ -25,6 +26,7 @@ export default function App() {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isChartsOpen, setIsChartsOpen] = useState(false);
+  const version = '0.1.1';
 
   // Load saved path on mount
   useEffect(() => {
@@ -223,6 +225,19 @@ export default function App() {
               ))}
             </div>
           )}
+
+          {/* Footer */}
+          <footer className="mt-12 py-8 border-t border-gray-100 flex flex-col items-center justify-center gap-2 text-gray-400">
+            <div className="flex items-center gap-2 group">
+              <div className="p-1 bg-gray-50 rounded group-hover:bg-blue-50 transition-colors">
+                <TerminalSquare className="w-3.5 h-3.5 text-gray-400 group-hover:text-blue-500" />
+              </div>
+              <span className="text-xs font-medium tracking-tight uppercase">v{version}</span>
+            </div>
+            <p className="text-[11px] font-medium tracking-wide text-gray-400/80">
+              Developed by <span className="text-gray-600 font-semibold">Hensley</span>
+            </p>
+          </footer>
         </div>
 
         {/* Details Drawer */}

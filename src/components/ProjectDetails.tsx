@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Play, RefreshCw, Trash2, Terminal, GitBranch, GitPullRequest, HardDrive, AlertCircle, CheckCircle2, FileText, Code2, TerminalSquare, Sparkles } from 'lucide-react';
+import { X, Play, RefreshCw, Trash2, Terminal, GitBranch, GitPullRequest, HardDrive, AlertCircle, CheckCircle2, FileText, Code2, TerminalSquare, Sparkles, Globe, Shield, CloudOff } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
@@ -12,6 +12,7 @@ interface Project {
   isDirty: boolean;
   size: string;
   sizeBytes: number;
+  protocol?: 'https' | 'ssh' | 'local' | 'none';
 }
 
 interface ProjectDetailsProps {
@@ -377,6 +378,26 @@ export function ProjectDetails({ project, onClose, onProjectUpdate }: ProjectDet
                       ) : (
                         <span className="text-sm font-medium text-emerald-600 flex items-center gap-1">
                           <CheckCircle2 className="w-4 h-4" /> Clean
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center justify-between border-t border-gray-200/50 pt-3 mt-1">
+                      <span className="text-sm text-gray-600">Protocol</span>
+                      {project.protocol === 'https' ? (
+                        <span className="text-sm font-medium text-blue-600 flex items-center gap-1.5">
+                          <Globe className="w-4 h-4" /> HTTPS
+                        </span>
+                      ) : project.protocol === 'ssh' ? (
+                        <span className="text-sm font-medium text-purple-600 flex items-center gap-1.5">
+                          <Shield className="w-4 h-4" /> SSH
+                        </span>
+                      ) : project.protocol === 'local' ? (
+                        <span className="text-sm font-medium text-gray-600 flex items-center gap-1.5">
+                          <Terminal className="w-4 h-4" /> Local
+                        </span>
+                      ) : (
+                        <span className="text-sm font-medium text-gray-400 flex items-center gap-1.5">
+                          <CloudOff className="w-4 h-4" /> No Remote
                         </span>
                       )}
                     </div>

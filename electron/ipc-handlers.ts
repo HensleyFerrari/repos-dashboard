@@ -55,6 +55,7 @@ export function registerIpcHandlers() {
             if (stack !== 'Unknown') {
               let branch = 'N/A';
               let isDirty = false;
+              let protocol: 'https' | 'ssh' | 'local' | 'none' = 'none';
               try {
                 const git = simpleGit(dirPath);
                 const isRepo = await git.checkIsRepo();
@@ -62,6 +63,27 @@ export function registerIpcHandlers() {
                   const status = await git.status();
                   branch = status.current || 'N/A';
                   isDirty = !status.isClean();
+
+                  // Detect protocol
+                  try {
+                    const remotes = await git.getRemotes(true);
+                    const origin = remotes.find(r => r.name === 'origin') || remotes[0];
+                    if (origin) {
+                      const url = origin.refs.fetch || origin.refs.push;
+                      if (url.startsWith('https://') || url.startsWith('http://')) {
+                        protocol = 'https';
+                      } else if (url.includes('@') || url.startsWith('ssh://') || url.startsWith('git://')) {
+                        protocol = 'ssh';
+                      } else {
+                        protocol = 'local';
+                      }
+                    } else {
+                      protocol = 'none';
+                    }
+                  } catch (e) {
+                    console.warn(`Error detecting protocol for ${dirPath}:`, e);
+                    protocol = 'none';
+                  }
                 }
               } catch (e: unknown) {
                 console.warn(`Error reading Git status for ${dirPath}:`, e instanceof Error ? e.message : String(e));
@@ -75,6 +97,7 @@ export function registerIpcHandlers() {
                 stack,
                 branch,
                 isDirty,
+                protocol,
                 size: formatBytes(sizeBytes),
                 sizeBytes,
               });

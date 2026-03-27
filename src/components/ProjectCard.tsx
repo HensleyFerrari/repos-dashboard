@@ -1,5 +1,5 @@
 import React from 'react';
-import { Folder, GitBranch, HardDrive, AlertCircle, CheckCircle2, Code2 } from 'lucide-react';
+import { Folder, GitBranch, HardDrive, AlertCircle, CheckCircle2, Code2, Globe, Shield, CloudOff, Terminal } from 'lucide-react';
 
 interface Project {
   id: string;
@@ -9,6 +9,7 @@ interface Project {
   branch: string;
   isDirty: boolean;
   size: string;
+  protocol?: 'https' | 'ssh' | 'local' | 'none';
 }
 
 interface ProjectCardProps {
@@ -87,8 +88,37 @@ export function ProjectCard({ project, onClick }: ProjectCardProps) {
             </div>
           )}
         </div>
+        
+        <div className="flex items-center justify-between text-[11px] pt-2 mt-2 border-t border-gray-50">
+          <div className="flex items-center gap-1.5 font-medium">
+            {project.protocol === 'https' ? (
+              <div className="flex items-center gap-1 text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">
+                <Globe className="w-3 h-3" />
+                <span>HTTPS</span>
+              </div>
+            ) : project.protocol === 'ssh' ? (
+              <div className="flex items-center gap-1 text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded">
+                <Shield className="w-3 h-3" />
+                <span>SSH</span>
+              </div>
+            ) : project.protocol === 'local' ? (
+              <div className="flex items-center gap-1 text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded">
+                <Terminal className="w-3 h-3" />
+                <span>Local</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1 text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded">
+                <CloudOff className="w-3 h-3" />
+                <span>No Remote</span>
+              </div>
+            )}
+          </div>
+          <div className="text-gray-400 font-mono scale-90 origin-right">
+            origin
+          </div>
+        </div>
 
-        <div className="flex items-center justify-between text-sm pt-3 border-t border-gray-100">
+        <div className="flex items-center justify-between text-sm pt-3 border-t border-gray-100 mt-2">
           <div className="flex items-center gap-1.5 text-gray-500">
             <HardDrive className="w-4 h-4" />
             <span>Size</span>

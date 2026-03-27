@@ -7,6 +7,7 @@ export interface Project {
   isDirty: boolean;
   size: string;
   sizeBytes: number;
+  protocol?: 'https' | 'ssh' | 'local' | 'none';
 }
 
 export interface ScanResult {
