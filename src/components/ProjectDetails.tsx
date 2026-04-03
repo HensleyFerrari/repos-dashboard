@@ -2,18 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Play, RefreshCw, Trash2, Terminal, GitBranch, GitPullRequest, HardDrive, AlertCircle, CheckCircle2, FileText, Code2, TerminalSquare, Sparkles, Globe, Shield, CloudOff } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-
-interface Project {
-  id: string;
-  name: string;
-  path: string;
-  stack: string;
-  branch: string;
-  isDirty: boolean;
-  size: string;
-  sizeBytes: number;
-  protocol?: 'https' | 'ssh' | 'local' | 'none';
-}
+import type { Project } from '../../electron/types';
 
 interface ProjectDetailsProps {
   project: Project;
