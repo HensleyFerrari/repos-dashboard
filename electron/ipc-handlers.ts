@@ -187,9 +187,13 @@ export function registerIpcHandlers() {
         gitStatus = JSON.parse(JSON.stringify(rawStatus));
         
         const branchSummary = await git.branch();
-        const allBranches = branchSummary.all;
-        localBranches = allBranches.filter(b => !b.startsWith('remotes/'));
-        remoteBranches = allBranches.filter(b => b.startsWith('remotes/'));
+        for (const branch of branchSummary.all) {
+          if (branch.startsWith('remotes/')) {
+            remoteBranches.push(branch);
+          } else {
+            localBranches.push(branch);
+          }
+        }
       }
     } catch (e: unknown) {
       console.error(`Error reading Git status for ${normalizedPath}:`, e);
