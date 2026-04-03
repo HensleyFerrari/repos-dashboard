@@ -102,8 +102,9 @@ export function ProjectDetails({ project, onClose, onProjectUpdate }: ProjectDet
       if (command.startsWith('git ')) {
         await fetchDetails();
       }
-    } catch (e: any) {
-      setLogs((prev) => prev + `Failed to execute: ${e.message}\n`);
+    } catch (e: unknown) {
+      const errorMessage = e instanceof Error ? e.message : String(e);
+      setLogs((prev) => prev + `Failed to execute: ${errorMessage}\n`);
     } finally {
       setIsRunning(false);
     }
@@ -124,8 +125,9 @@ export function ProjectDetails({ project, onClose, onProjectUpdate }: ProjectDet
         onProjectUpdate({ id: project.id, size: data.size, sizeBytes: data.sizeBytes });
         setLogs((prev) => prev + `New project size: ${data.size}\n`);
       }
-    } catch (e: any) {
-      setLogs((prev) => prev + `Failed to execute: ${e.message}\n`);
+    } catch (e: unknown) {
+      const errorMessage = e instanceof Error ? e.message : String(e);
+      setLogs((prev) => prev + `Failed to execute: ${errorMessage}\n`);
     } finally {
       setIsRunning(false);
     }
@@ -141,8 +143,9 @@ export function ProjectDetails({ project, onClose, onProjectUpdate }: ProjectDet
       
       onProjectUpdate({ id: project.id, size: data.size, sizeBytes: data.sizeBytes });
       setLogs((prev) => prev + `Recalculation complete. New size: ${data.size}\n`);
-    } catch (e: any) {
-      setLogs((prev) => prev + `Failed to execute: ${e.message}\n`);
+    } catch (e: unknown) {
+      const errorMessage = e instanceof Error ? e.message : String(e);
+      setLogs((prev) => prev + `Failed to execute: ${errorMessage}\n`);
     } finally {
       setIsRunning(false);
     }
@@ -159,8 +162,9 @@ export function ProjectDetails({ project, onClose, onProjectUpdate }: ProjectDet
       setLogs((prev) => prev + `${data.logs}\n`);
       setLogs((prev) => prev + `Successfully deleted ${data.deletedCount} obsolete branches.\n`);
       await fetchDetails(); // Refresh branches
-    } catch (e: any) {
-      setLogs((prev) => prev + `Failed to execute: ${e.message}\n`);
+    } catch (e: unknown) {
+      const errorMessage = e instanceof Error ? e.message : String(e);
+      setLogs((prev) => prev + `Failed to execute: ${errorMessage}\n`);
     } finally {
       setIsRunning(false);
     }
@@ -184,8 +188,9 @@ export function ProjectDetails({ project, onClose, onProjectUpdate }: ProjectDet
       } else {
         setLogs((prev) => prev + `Successfully opened project in ${ideName}.\n`);
       }
-    } catch (e: any) {
-      setLogs((prev) => prev + `Failed to execute: ${e.message}\n`);
+    } catch (e: unknown) {
+      const errorMessage = e instanceof Error ? e.message : String(e);
+      setLogs((prev) => prev + `Failed to execute: ${errorMessage}\n`);
     } finally {
       setIsRunning(false);
     }
@@ -211,8 +216,9 @@ export function ProjectDetails({ project, onClose, onProjectUpdate }: ProjectDet
           openIde('code');
         }
       }
-    } catch (e: any) {
-      setLogs((prev) => prev + `Failed to execute: ${e.message}\n`);
+    } catch (e: unknown) {
+      const errorMessage = e instanceof Error ? e.message : String(e);
+      setLogs((prev) => prev + `Failed to execute: ${errorMessage}\n`);
     } finally {
       setIsRunning(false);
     }
