@@ -4,18 +4,7 @@ import { ProjectDetails } from './components/ProjectDetails';
 import { SettingsModal } from './components/SettingsModal';
 import { ChartsModal } from './components/ChartsModal';
 import { FolderSearch, Loader2, AlertCircle, FolderOpen, Search, TerminalSquare, Settings, PieChart } from 'lucide-react';
-
-interface Project {
-  id: string;
-  name: string;
-  path: string;
-  stack: string;
-  branch: string;
-  isDirty: boolean;
-  size: string;
-  sizeBytes: number;
-  protocol?: 'https' | 'ssh' | 'local' | 'none';
-}
+import type { Project } from '../electron/types';
 
 export default function App() {
   const [rootPath, setRootPath] = useState('');

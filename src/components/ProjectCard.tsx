@@ -1,16 +1,6 @@
 import React from 'react';
 import { Folder, GitBranch, HardDrive, AlertCircle, CheckCircle2, Code2, Globe, Shield, CloudOff, Terminal, TerminalSquare, Sparkles } from 'lucide-react';
-
-interface Project {
-  id: string;
-  name: string;
-  path: string;
-  stack: string;
-  branch: string;
-  isDirty: boolean;
-  size: string;
-  protocol?: 'https' | 'ssh' | 'local' | 'none';
-}
+import type { Project } from '../../electron/types';
 
 interface ProjectCardProps {
   project: Project;

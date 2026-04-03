@@ -1,11 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, PieChart as PieChartIcon, Loader2, HardDrive, Folder } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-
-interface Project {
-  name: string;
-  sizeBytes: number;
-}
+import type { Project } from '../../electron/types';
 
 interface ChartsModalProps {
   isOpen: boolean;
