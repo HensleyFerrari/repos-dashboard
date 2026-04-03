@@ -4,7 +4,7 @@ import path from 'node:path';
 import { simpleGit } from 'simple-git';
 import { exec } from 'node:child_process';
 import type { Project } from './types';
-import { getFolderSize, formatBytes, normalizePath } from './utils';
+import { getFolderSize, formatBytes, normalizePath, openProjectInIde } from './utils';
 
 export function registerIpcHandlers() {
   // Select directory using native dialog
@@ -312,16 +312,7 @@ export function registerIpcHandlers() {
       throw new Error('projectPath and ideCommand are required');
     }
 
-    const normalizedPath = normalizePath(projectPath);
-    return new Promise((resolve) => {
-      // Use exec to spawn the IDE command with the path
-      exec(`${ideCommand} "${normalizedPath}"`, (error) => {
-        resolve({
-          success: !error,
-          error: error ? error.message : null,
-        });
-      });
-    });
+    return openProjectInIde(projectPath, ideCommand);
   });
 
   // Get disk and folder stats

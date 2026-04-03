@@ -1,5 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import * as childProcess from 'node:child_process';
 
 // Helper to get folder size recursively
 export async function getFolderSize(dirPath: string): Promise<number> {
@@ -44,4 +45,54 @@ export function normalizePath(p: string): string {
     normalized = normalized.substring(1);
   }
   return normalized;
+}
+
+const ALLOWED_IDE_COMMANDS = ['code', 'cursor', 'antigravity'];
+
+/**
+ * Open project in IDE using child_process.spawn to avoid command injection
+ */
+export async function openProjectInIde(projectPath: string, ideCommand: string): Promise<{ success: boolean; error: string | null }> {
+  if (!ALLOWED_IDE_COMMANDS.includes(ideCommand)) {
+    return {
+      success: false,
+      error: `IDE command '${ideCommand}' is not allowed.`,
+    };
+  }
+
+  const normalizedPath = normalizePath(projectPath);
+
+  return new Promise((resolve) => {
+    // Use spawn instead of exec to prevent command injection
+    const child = childProcess.spawn(ideCommand, [normalizedPath], {
+      shell: false,
+      windowsHide: true,
+    });
+
+    child.on('error', (error) => {
+      resolve({
+        success: false,
+        error: error.message,
+      });
+    });
+
+    // We don't necessarily need to wait for it to finish for success,
+    // but the error event will trigger if it fails to start.
+    // Give it a short time to catch early startup errors.
+    const timeout = setTimeout(() => {
+      resolve({
+        success: true,
+        error: null,
+      });
+    }, 200);
+
+    child.on('spawn', () => {
+      // If it successfully spawned, we consider it a success
+      clearTimeout(timeout);
+      resolve({
+        success: true,
+        error: null,
+      });
+    });
+  });
 }
